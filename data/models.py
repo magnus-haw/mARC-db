@@ -54,6 +54,9 @@ class Diagnostic(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['pk']
+
 class Record(models.Model):
     spreadsheet = models.ForeignKey(Spreadsheet, on_delete=models.CASCADE)
     sheet = models.ForeignKey(Sheet, on_delete=models.CASCADE)
