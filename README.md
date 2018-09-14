@@ -21,9 +21,8 @@ $ cd mARC-db
 $ pip install -r requirements.txt
 ```
 
-Paste the database file: db.sqlite3 into the mARC-db/ folder
-
 ### Run server
+Paste the database file: db.sqlite3 into the mARC-db/ folder. Then execute the following command in the mARC-db/ folder:
 ```
 $ python manage.py runserver
 
