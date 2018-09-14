@@ -1,0 +1,25 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>{{ diagnostic.name }}</h1>
+
+  <p><strong>Description:</strong> {{ diagnostic.description }}</p>
+  <p><strong>Sensor:</strong> {{ diagnostic.sensor }}</p>
+  <p><strong>Notes:</strong> {{ diagnostic.notes }}</p>
+   <div style="margin-left:20px;margin-top:20px">
+    <h4>Spreadsheets</h4>
+
+    {% for s in spreadsheet_list %}
+      <hr>
+      <p><strong><a href="{% url 'spreadsheet-detail' s %}">{{s}}</a></strong></p>
+    {% endfor %}
+  </div>
+  <div style="margin-left:20px;margin-top:20px">
+    <h4>Sheets</h4>
+
+    {% for sheet in sheet_list %}
+      <hr>
+      <p><strong><a href="{% url 'sheet-detail' sheet.pk %}">{{sheet.name}}</a></strong></p>
+    {% endfor %}
+  </div>
+{% endblock %}

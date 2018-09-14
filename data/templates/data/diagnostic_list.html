@@ -1,0 +1,12 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Diagnostic List</h1>
+  <ul>
+    {% for diag in diagnostic_list %}
+      <li>
+        <a href="{% url 'diagnostic-detail' diag.pk %}">{{ diag.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

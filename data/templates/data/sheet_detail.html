@@ -1,0 +1,34 @@
+{% extends "base_generic.html" %}
+
+{% block head %}
+  <!-- Bokeh plotting JS and CSS -->
+  <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+  <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.js"></script>
+  <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.css" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block content %}
+  <h1>Sheet: {{ sheet.name }}</h1>
+
+  <p><strong>Spreadsheet:</strong> <a href="{% url 'spreadsheet-detail' sheet.spreadsheet.pk %}">{{ sheet.spreadsheet.filename }}</a></p>
+  <p><strong>Notes:</strong> {{ sheet.notes }}</p>
+  <p><strong><a href="{% url 'sheet-detail-csv' sheet.pk %}">Download CSV</a></strong></p>
+<div class="row">
+
+	<div class="col-sm-3" style="margin-left:20px;margin-top:20px">
+    <h4>Diagnostics:</h4>
+    
+    {% for diag,dpk in list_diagnostics %}
+      <hr>
+      <p><strong>{{diag}}</strong></p>
+    {% endfor %}
+  </div>
+
+  <div class="col-sm-6">
+  {{ div | safe }}
+  {{ script | safe }}
+  </div>
+
+</div> <!-- end row-->
+{% endblock %}

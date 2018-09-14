@@ -1,0 +1,13 @@
+{% extends "base_generic.html" %}
+
+{% block head %}
+  <!-- Bokeh plotting JS and CSS -->
+  <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+{% endblock %}
+
+{% block content %}
+  {{ div | safe }}
+  {{ script | safe }}
+{% endblock %}
+

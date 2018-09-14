@@ -1,0 +1,16 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Spreadsheet List</h1>
+  {% if spreadsheet_list %}
+  <ul>
+    {% for spreadsheet in spreadsheet_list %}
+      <li>
+        <a href="{% url 'spreadsheet-detail' spreadsheet.pk %}">{{ spreadsheet.filename }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>There are no spreadsheets in the database.</p>
+  {% endif %}       
+{% endblock %}

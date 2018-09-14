@@ -1,0 +1,13 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>mARC database v1.0</h1>
+  <p>Welcome to the mARC database</p>
+  <h2>Overview</h2>
+  <p>The database contains the following record counts:</p>
+  <ul>
+    <li><strong>Spreadsheets:</strong> {{ num_spreadsheets }}</li>
+    <li><strong>Runs:</strong> {{ num_sheets }}</li>
+    <li><strong>Records:</strong> {{num_records}}</li>
+  </ul>
+{% endblock %}
