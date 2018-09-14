@@ -2,9 +2,9 @@
 
 This is a python app for accessing mARC data using the Django webserver framework
 
-## Running Locally
+## Running Locally on Windows
 
-Make sure you have Python3 [installed properly](http://install.python-guide.org). Then you can clone the project and install the requirements:
+Make sure you have both [git](https://git-scm.com/download/win) and [Python3](http://install.python-guide.org). Then you can clone the project and install the requirements:
 
 ### Install using Anaconda distribution
 ```sh
