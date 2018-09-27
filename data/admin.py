@@ -9,9 +9,9 @@ class SpreadsheetAdmin(admin.ModelAdmin):
 
 class SheetAdmin(admin.ModelAdmin):
     exclude = ('columnBooleans',)
-    list_display = ('name','spreadsheet','notes')
+    list_display = ('name','spreadsheet','avg_current','std_current','avg_voltage','avg_column_pressure','avg_plasma_gas','avg_shield_gas','notes')
     list_filter = ('spreadsheet__date','spreadsheet',)
-    search_fields = ('name','spreadsheet','notes')
+    search_fields = ('name','spreadsheet__filename','notes')
 
 class DiagnosticAdmin(admin.ModelAdmin):
     exclude = ('key',)

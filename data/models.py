@@ -17,6 +17,16 @@ class Sheet(models.Model):
     name = models.CharField(max_length=200)
     spreadsheet = models.ForeignKey(Spreadsheet, on_delete=models.CASCADE)
     columnBooleans = models.CharField(max_length=50)
+    start_index = models.IntegerField(null=True,blank=True)
+    end_index = models.IntegerField(null=True,blank=True)
+    avg_current = models.FloatField(null=True,blank=True)
+    std_current = models.FloatField(null=True,blank=True)
+    avg_voltage = models.FloatField(null=True,blank=True)
+    avg_plasma_gas = models.FloatField(null=True,blank=True)
+    avg_shield_gas = models.FloatField(null=True,blank=True)
+    avg_chamber_pressure = models.FloatField(null=True,blank=True)
+    avg_column_pressure = models.FloatField(null=True,blank=True)
+    
     notes = models.TextField(null=True)
     cnames = ['Time [s]','Arc Voltage [V]','Current [A]',
         'ChamberPressure [Pa]','ColumnPressure [Pa]',
