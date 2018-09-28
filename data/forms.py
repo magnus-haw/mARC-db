@@ -1,11 +1,11 @@
 from django import forms
-from .models import Record,Sheet,Spreadsheet,Diagnostic
+from .models import Record,Series,Experiment,Diagnostic
 
 class SearchForm(forms.Form):
-    choices = Spreadsheet.objects.all().values_list('pk',flat=True)
+    choices = Experiment.objects.all().values_list('pk',flat=True)
     
-    spreadsheets = forms.ModelMultipleChoiceField( 
-            queryset = Spreadsheet.objects.all(),
+    experiments = forms.ModelMultipleChoiceField( 
+            queryset = Experiment.objects.all(),
             required=False,
             )
     #sheets = forms.MultipleChoiceField(

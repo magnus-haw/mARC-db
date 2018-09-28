@@ -1,5 +1,5 @@
 from django.shortcuts import render,render_to_response,get_object_or_404
-from data.models import Diagnostic,Spreadsheet,Sheet,Record
+from data.models import Diagnostic,Experiment,Run,Record
 from data.forms import SearchForm
 
 from django.http import HttpResponse
@@ -14,12 +14,12 @@ import pandas as pd
 import csv
 
 def index(request):
-    num_spreadsheets = Spreadsheet.objects.count()
-    num_sheets = Sheet.objects.count()
+    num_experiments = Experiment.objects.count()
+    num_runs = Run.objects.count()
     num_records = Record.objects.count()
     context = {
-            'num_spreadsheets':num_spreadsheets,
-            'num_sheets':num_sheets,
+            'num_experiments':num_experiments,
+            'num_runs':num_runs,
             'num_records':num_records,
             }
     return render(request, 'index.html', context=context)
@@ -32,39 +32,30 @@ def SearchData(request):
 
         # Check if the form is valid:
         if form.is_valid():
-            sp = form.cleaned_data['spreadsheets']
+            exps = form.cleaned_data['experiments']
             diag =  form.cleaned_data['diagnostics']
-            
-            inds,keys =[],[]
-            for d in diag:
-                inds.append(d.pk - 1)
-                keys.append(d.key)
 
-            mystr = r"^"
-            for i in range(0,21):
-                if i in inds:
-                    mystr += '1'
-                else:
-                    mystr += '.'
-            mystr += "$"
-            
-            dflist = []
-            for ss in sp:
-                shls = Sheet.objects.filter(spreadsheet=ss,columnBooleans__iregex=mystr)
-                if len(shls) == 0:
-                    sp = sp.exclude(pk=ss.pk)
-                for sh in shls:
-                    df = pd.DataFrame(list(sh.record_set.all().values('time',*keys).order_by('time')) )
-                    df.spreadsheet = sh.spreadsheet.filename.rstrip('.xlsx')
-                    df.sheet = sh.name
+            for exp in exps:
+                runs = Run.objects.filter(experiment=exp)
+                for run in runs:
+                    df = pd.DataFrame(list(run.record_set.all().values('time',*keys).order_by('time')) )
+                    df.experiment = sh.experiment.filename.rstrip('.xlsx')
+                    df.run = run.name
                     dflist.append(df)
             mycolor_ind =0
             myfigs = []
+            
             for d in diag:
                 fig = figure(x_axis_label= "Time [s]",y_axis_label=d.name,
-                        plot_width =1000,plot_height =500)
-                for df in dflist:
-                    fig.line(df['time'], df[d.key],line_width = 1, legend= df.sheet+'_'+df.spreadsheet, line_color=mycolors[mycolor_ind])
+                             plot_width =1000,plot_height =500)
+                for exp in exps:
+                    runs = Run.objects.filter(experiment=exp)
+                    for run in runs:
+                        time_series = run.series_set.filter(diagnostic='Time')[0]
+                        time = list(time_series.record_set.values('value'))
+                        series_set = run.series_set.filter(diagnostic=d)
+                        if len(series_set) == 1:
+                            fig.line(time, df[d.key],line_width = 1, legend= df.run+'_'+df.experiment, line_color=mycolors[mycolor_ind])
                     mycolor_ind = (mycolor_ind+1)%len(mycolors)
                 fig.legend.click_policy="hide"
                 myfigs.append(fig)
@@ -72,9 +63,9 @@ def SearchData(request):
             try:
                 script, div = components(bigplot)
             except:
-                print('Sheet plotting error')
+                print('Run plotting error')
                 script,div = '','' 
-            context = {'form': form,'spreadsheets':sp,'diagnostics':diag,'script':script,'div':div}
+            context = {'form': form,'experiments':sp,'diagnostics':diag,'script':script,'div':div}
             
             # render results:
             return render(request, 'search_results.html', context)
@@ -88,35 +79,35 @@ def SearchData(request):
 
     return render(request, 'search.html', context)
 
-class SpreadsheetListView(generic.ListView):
-    model = Spreadsheet
+class ExperimentListView(generic.ListView):
+    model = Experiment
 
-class SpreadsheetDetailView(generic.DetailView):
-    model = Spreadsheet
+class ExperimentDetailView(generic.DetailView):
+    model = Experiment
 
 class DiagnosticListView(generic.ListView):
     model = Diagnostic
 
 def ViewDiagnostic(request,pk):
     dg = get_object_or_404(Diagnostic, pk=pk)
-    ind = pk-1
-    mystr = r"^"+ ind*"." + "1" + ".*$" 
 
-    shls = Sheet.objects.filter(columnBooleans__iregex=mystr)
-    spshls = shls.values_list('spreadsheet',flat=True)
-    spshls = list(set(spshls))
+    series_set = Series.filter(diagnostic=pk)
+    run_list = list(set(series_set.values_list('run',flat=True)))
+    run_set = Run.objects.filter(name__in=run_list)
+    exp_list = list(set(run_set.values_list('experiment',flat=True)))
+    
     context = {
             'diagnostic':dg,
-            'sheet_list':shls,
-            'spreadsheet_list':spshls,
+            'runs'runs,
+            'experiment_list':exp_list,
             }
     return render(request, 'data/diagnostic_detail.html', context = context)
 
-def DownloadSheetCSV(request,pk):
-    sh = get_object_or_404(Sheet, pk=pk)
+def DownloadRunCSV(request,pk):
+    sh = get_object_or_404(Run, pk=pk)
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="%s"'%(sh.name+'_'+sh.spreadsheet.filename.rstrip('.xlsx')+'_'+'mARC.csv')
+    response['Content-Disposition'] = 'attachment; filename="%s"'%(sh.name+'_'+sh.experiment.filename.rstrip('.xlsx')+'_'+'mARC.csv')
     writer = csv.writer(response)
 
     df = pd.DataFrame(list(sh.record_set.all().values().order_by('time')) )
@@ -129,10 +120,10 @@ def DownloadSheetCSV(request,pk):
 def DownloadSearchCSV(request):
     dgs = request.GET.getlist('diagnostic')
     print(dgs)
-    sps = request.GET.getlist('spreadsheet')
+    sps = request.GET.getlist('experiment')
     print(sps)
     #sps,dgs = spsh_str.split(','), diag_str.split(',')
-    sp = Spreadsheet.objects.filter(filename__in = sps)
+    sp = Experiment.objects.filter(filename__in = sps)
     diag = Diagnostic.objects.filter(pk__in = dgs) 
 
     inds,keys =[],[]
@@ -150,7 +141,7 @@ def DownloadSearchCSV(request):
 
     dflist = []
     for ss in sp:
-        shls = Sheet.objects.filter(spreadsheet=ss,columnBooleans__iregex=mystr)
+        shls = Run.objects.filter(experiment=ss,columnBooleans__iregex=mystr)
         if len(shls) == 0:
             sp = sp.exclude(pk=ss.pk)
         for sh in shls:
@@ -171,9 +162,9 @@ def DownloadSearchCSV(request):
     return response
 
 
-def ViewSheet(request,pk):
-    sh = get_object_or_404(Sheet, pk=pk)
-    ld = Sheet.objects.get(pk=pk).list_diagnostics()
+def ViewRun(request,pk):
+    sh = get_object_or_404(Run, pk=pk)
+    ld = Run.objects.get(pk=pk).list_diagnostics()
     df = pd.DataFrame(list(sh.record_set.all().values().order_by('time')) )
     
     ### Plotting section
@@ -217,9 +208,9 @@ def ViewSheet(request,pk):
     bigplot = column(*figs)
     script, div = components(bigplot)
     #except:
-    #    print('Sheet plotting error')
+    #    print('Run plotting error')
     #    script,div = '',''
-    return render(request, 'data/sheet_detail.html', {'sheet':sh,'data':df,'script':script,'div':div,
+    return render(request, 'data/run_detail.html', {'run':sh,'data':df,'script':script,'div':div,
                                                       'list_diagnostics':ld})
 
 labelDict = {'plasma_gas': 'PlasmaGas [g/s]', 'kurtlesker_pirani': 'KurtLeskerPirani [Pa]', 'gardon_temp': 'GardonTemp [degC]', 'pitot_temp': 'PitotTemp [degC]', 'cathode_supply': 'Cathode Supply [degC]', 'cathode_return': 'Cathode Return [degC]', 'pitot_position': 'PitotPosition [in]', 'voltage': 'Arc Voltage [V]', 'pitot_pressure': 'PitotPressure [Pa]', 'time': 'Time [s]', 'currentSC': 'CurrentSC [A]', 'vex_position': 'String Pot Vex [in]', 'current': 'Current [A]', 'shield_gas': 'ShieldGas [g/s]', 'gardon_heat_flux': 'GardonHeatFlux [W/cm^2]', 'B_RAX_pirani': 'B-RAX-Pirani [V]', 'gardon_position': 'GardonPosition [in]', 'chamber_pressure': 'ChamberPressure [Pa]', 'column_pressure': 'ColumnPressure [Pa]', 'vacuumpump_pressure': 'Vacuumpumps [Pa]', 'anode_deltaT': 'AnodeDeltaT [degC]'}

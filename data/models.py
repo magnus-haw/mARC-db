@@ -2,21 +2,42 @@ from django.db import models
 
 # Create your models here.
 
-class Spreadsheet(models.Model):
-    filename = models.CharField(max_length=200,primary_key=True)
-    date = models.DateField()
+class Facility(models.Model):
+    name = models.CharField(max_length=200,unique=True)
     notes = models.TextField(null=True)
 
     def __str__(self):
-        return self.filename
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+class Apparatus(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+    notes = models.TextField(null=True)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+class Experiment(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+    date = models.DateField()
+    notes = models.TextField(null=True)
+    apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         ordering = ['date']
 
-class Sheet(models.Model):
+class Run(models.Model):
     name = models.CharField(max_length=200)
-    spreadsheet = models.ForeignKey(Spreadsheet, on_delete=models.CASCADE)
-    columnBooleans = models.CharField(max_length=50)
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     start_index = models.IntegerField(null=True,blank=True)
     end_index = models.IntegerField(null=True,blank=True)
     avg_current = models.FloatField(null=True,blank=True)
@@ -28,73 +49,59 @@ class Sheet(models.Model):
     avg_column_pressure = models.FloatField(null=True,blank=True)
     
     notes = models.TextField(null=True)
-    cnames = ['Time [s]','Arc Voltage [V]','Current [A]',
-        'ChamberPressure [Pa]','ColumnPressure [Pa]',
-        'PlasmaGas [g/s]','ShieldGas [g/s]','AnodeDeltaT [degC]',
-        'Cathode Return [degC]','Cathode Supply [degC]','CurrentSC [A]',
-        'PitotTemp [degC]','PitotPressure [Pa]','GardonHeatFlux [W/cm^2]',
-        'GardonTemp [degC]','PitotPosition [in]','GardonPosition [in]',
-        'Vacuumpumps [Pa]','String Pot Vex [in]','KurtLeskerPirani [Pa]',
-        'B-RAX-Pirani [V]']
+    
     class Meta:
-        unique_together = (("name", "spreadsheet"),)
+        unique_together = (("name", "experiment"),)
         ordering = ['name']
     
     def __str__(self):
         return self.name
 
-    def list_diagnostics(self):
-        myd,mypk = [],[]
-        for c in range(0,len(self.columnBooleans)):
-            if self.columnBooleans[c] == '1':
-                myd.append(self.cnames[c])
-                mypk.append(c+1)
-        return zip(myd,mypk)
+class RunAggregate(models.Model):
+    name = models.CharField(max_length=200)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    value = models.FloatField(null=True,blank=True)
+    notes = models.TextField(null=True)
+    user = models.ForeignKey(User, editable = False)
+
+    def __str__(self):
+        return self.name
 
 class Diagnostic(models.Model):
     name = models.CharField(max_length=50,unique=True)
-    units = models.CharField(max_length=50)
+    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
     notes = models.TextField(blank=True,null=True)
     sensor= models.CharField(max_length=200)
     description = models.TextField()
     resolution = models.FloatField(blank=True,null=True)
     noise = models.FloatField(blank=True,null=True)
-    key = models.CharField(max_length=50,unique=True,blank=True,null=True)
     
     def __str__(self):
         return self.name
 
-    class Meta:
-        ordering = ['pk']
+class AlternateDiagnosticName(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+
+class Unit(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    short_name = models.CharField(max_length=5,unique=True)
+    def __str__(self):
+        return self.name+'['+self.short_name+']'
+
+class AlternateUnitName(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
+
+class Series(models.Model):
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
 
 class Record(models.Model):
-    spreadsheet = models.ForeignKey(Spreadsheet, on_delete=models.CASCADE)
-    sheet = models.ForeignKey(Sheet, on_delete=models.CASCADE)
-    time    = models.FloatField(verbose_name='Time [s]')
-    voltage = models.FloatField(null=True,blank=True,verbose_name='Arc Voltage [V]')
-    current = models.FloatField(null=True,blank=True,verbose_name='Current [A]')
-    chamber_pressure = models.FloatField(null=True,blank=True,verbose_name='ChamberPressure [Pa]')
-    column_pressure  = models.FloatField(null=True,blank=True,verbose_name='ColumnPressure [Pa]')
-    plasma_gas = models.FloatField(null=True,blank=True,verbose_name='PlasmaGas [g/s]')
-    shield_gas = models.FloatField(null=True,blank=True,verbose_name='ShieldGas [g/s]')
-    anode_deltaT = models.FloatField(null=True,blank=True,verbose_name='AnodeDeltaT [degC]')
-    cathode_return = models.FloatField(null=True,blank=True,verbose_name='Cathode Return [degC]')
-    cathode_supply =  models.FloatField(null=True,blank=True,verbose_name='Cathode Supply [degC]')
-    currentSC =  models.FloatField(null=True,blank=True,verbose_name='CurrentSC [A]')
-    pitot_temp =  models.FloatField(null=True,blank=True,verbose_name='PitotTemp [degC]')
-    pitot_pressure =  models.FloatField(null=True,blank=True,verbose_name='PitotPressure [Pa]')
-    gardon_heat_flux =  models.FloatField(null=True,blank=True,verbose_name='GardonHeatFlux [W/cm^2]')
-    gardon_temp =  models.FloatField(null=True,blank=True,verbose_name='GardonTemp [degC]')
-    pitot_position =  models.FloatField(null=True,blank=True,verbose_name='PitotPosition [in]')
-    gardon_position =  models.FloatField(null=True,blank=True,verbose_name='GardonPosition [in]')
-    vacuumpump_pressure =  models.FloatField(null=True,blank=True,verbose_name='Vacuumpumps [Pa]')
-    vex_position =  models.FloatField(null=True,blank=True,verbose_name='String Pot Vex [in]')
-    kurtlesker_pirani =  models.FloatField(null=True,blank=True,verbose_name='KurtLeskerPirani [Pa]')
-    B_RAX_pirani =  models.FloatField(null=True,blank=True,verbose_name='B-RAX-Pirani [V]')
-    mask_data = models.BooleanField(default=False)
-    flags = models.CharField(max_length=50)
-
-    class Meta:
-        unique_together = (("sheet", "spreadsheet","time"),)
-        ordering = ['time']
-
+    series = models.ForeignKey(Series, on_delete=models.CASCADE)
+    value = models.FloatField(null=True,blank=True)
+    index = model.IntegerField()
