@@ -1,19 +1,23 @@
 from django.db import models
-
+import pandas as pd
+from numpy import array,shape
 # Create your models here.
 
 class Facility(models.Model):
     name = models.CharField(max_length=200,unique=True)
+    acronym = models.CharField(max_length=10,unique=True)
     notes = models.TextField(null=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        ordering = ['name']
+        ordering = ['pk']
+        verbose_name_plural = "Facilities"
 
 class Apparatus(models.Model):
     name = models.CharField(max_length=200,unique=True)
+    acronym = models.CharField(max_length=10,unique=True)
     notes = models.TextField(null=True)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
 
@@ -21,7 +25,8 @@ class Apparatus(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['name']
+        ordering = ['pk']
+        verbose_name_plural = "Apparatus"
 
 class Experiment(models.Model):
     name = models.CharField(max_length=200,unique=True)
@@ -57,19 +62,44 @@ class Run(models.Model):
     def __str__(self):
         return self.name
 
+    def get_dataframe(self):
+        series = Series.objects.filter(run=self)
+        col_data, col_names = [],[]
+        for s in series:
+            col_names.append(s.name)
+            col_data.append( s.record_set.order_by('index').values_list('value',flat=True) )
+        d = array( col_data ).T
+        return pd.DataFrame(d,columns=col_names)
+        
+    def get_diagnostics(self):
+        dg_list = Series.objects.filter(run=self).values_list('diagnostic__name',flat=True)
+        diagnostics = Diagnostic.objects.filter(name__in=dg_list)
+        return diagnostics
+
 class RunAggregate(models.Model):
     name = models.CharField(max_length=200)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
     value = models.FloatField(null=True,blank=True)
     notes = models.TextField(null=True)
-    user = models.ForeignKey(User, editable = False)
+    user = models.ForeignKey('auth.User',null=True,blank=True,on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
 
+class Unit(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    short_name = models.CharField(max_length=5,unique=True)
+    def __str__(self):
+        return self.name
+
+class AlternateUnitName(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
+
 class Diagnostic(models.Model):
     name = models.CharField(max_length=50,unique=True)
     units = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
     notes = models.TextField(blank=True,null=True)
     sensor= models.CharField(max_length=200)
     description = models.TextField()
@@ -83,16 +113,6 @@ class AlternateDiagnosticName(models.Model):
     name = models.CharField(max_length=50,unique=True)
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
 
-class Unit(models.Model):
-    name = models.CharField(max_length=50,unique=True)
-    short_name = models.CharField(max_length=5,unique=True)
-    def __str__(self):
-        return self.name+'['+self.short_name+']'
-
-class AlternateUnitName(models.Model):
-    name = models.CharField(max_length=50,unique=True)
-    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
-
 class Series(models.Model):
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
@@ -101,7 +121,10 @@ class Series(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "Series"
+
 class Record(models.Model):
     series = models.ForeignKey(Series, on_delete=models.CASCADE)
     value = models.FloatField(null=True,blank=True)
-    index = model.IntegerField()
+    index = models.IntegerField(editable=False)

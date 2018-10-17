@@ -1,0 +1,16 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>Search</title>{% endblock %}
+
+{% block content %}
+  <h1>Choose an apparatus to search:</h1>
+
+  <div style="margin-left:20px;margin-top:20px">
+  {% for facility in facilities %}
+    <h4>{{facility.name}}</h4><hr>
+    {% for app in facility.apparatus_set.all %}
+      <p><strong><a href="{% url 'search-app' app.pk %}">{{app.name}}</a></strong></p>
+    {% endfor %}<br>
+  {% endfor %}
+  </div>
+{% endblock %}

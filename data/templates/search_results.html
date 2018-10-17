@@ -14,10 +14,11 @@
 </p>
 
 <p><strong>Spreadsheets:</strong>
-{% for d in spreadsheets %}{{d}},&nbsp;{% endfor %}
+{% for d in experiments %}{{d}},&nbsp;{% endfor %}
 </p>
 
-<p><a href="{% url 'search-csv' %}?{% for d in diagnostics %}diagnostic={{d.pk}}&{% endfor %}{% for sp in spreadsheets %}spreadsheet={{sp.pk}}&{% endfor %}">Download results</a></p>
+<p><a href="{% url 'search-csv' apparatus_pk %}?
+{% for s in serieslist %}series={{s}}&{% endfor %}">Download results</a></p>
 
 <div class="col-sm-6">
   {{ div | safe }}

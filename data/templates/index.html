@@ -1,13 +1,15 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>mARC database v1.0</h1>
-  <p>Welcome to the mARC database</p>
+  <h1>Arcjet database v2.0</h1>
+  <p>Welcome to the arcjet database</p>
   <h2>Overview</h2>
-  <p>The database contains the following record counts:</p>
+  <p>This database contains:</p>
   <ul>
-    <li><strong>Spreadsheets:</strong> {{ num_spreadsheets }}</li>
-    <li><strong>Runs:</strong> {{ num_sheets }}</li>
+    <li><strong>Facilities:</strong> {{ num_facilities }}</li>
+    <li><strong>Apparatus:</strong> {{ num_apparatus }}</li>
+    <li><strong>Experiments:</strong> {{ num_experiments }}</li>
+    <li><strong>Runs:</strong> {{ num_runs }}</li>
     <li><strong>Records:</strong> {{num_records}}</li>
   </ul>
 {% endblock %}

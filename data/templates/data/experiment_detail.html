@@ -1,0 +1,25 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ experiment.name }}</title>{% endblock %}
+
+{% block content %}
+  <h1>Experiment: {{ experiment.name }}</h1>
+
+  <p><strong>Date:</strong> {{ experiment.date }}</p>
+  <p><strong>Apparatus:</strong> <a href="{% url 'apparatus' experiment.apparatus.pk %}">{{ experiment.apparatus.name }}</a></p>
+      <p><strong>Facility:</strong> <a href="{% url 'facility-detail' experiment.apparatus.facility.name %}">{{ experiment.apparatus.facility.name }}</a></p>
+  <p><strong>Notes:</strong> {{ experiment.notes }}</p>
+  <p><a href="{% url 'upload_csv' experiment.pk %}">Upload additional run (*.csv)</a></p>
+
+
+  <div style="margin-left:20px;margin-top:20px">
+    <h4>Runs</h4>
+
+    {% for run in experiment.run_set.all %}
+      <hr>
+      <p><strong><a href="{% url 'run-detail' run.pk %}">{{run.name}}</a></strong></p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+

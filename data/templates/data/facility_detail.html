@@ -1,0 +1,17 @@
+{% extends "base_generic.html" %}
+{% block title %}<title>{{ facility.name }}</title>{% endblock %}
+
+{% block content %}
+  <h1>Facility: {{ facility.name }}</h1>
+
+  <p><strong>Description:</strong> {{ facility.notes }}</p>
+
+  <div style="margin-left:20px;margin-top:20px">
+    <h4>Apparatus</h4>
+
+    {% for app in facility.apparatus_set.all %}
+      <hr>
+      <p><strong><a href="{% url 'apparatus' app.pk %}">{{app.name}}</a></strong></p>
+    {% endfor %}
+  </div>
+{% endblock %}

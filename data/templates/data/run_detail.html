@@ -1,0 +1,56 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ run.name }}</title>{% endblock %}
+
+{% block head %}
+  <!-- Bokeh plotting JS and CSS -->
+  <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+  <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.js"></script>
+  <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.css" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block content %}
+  <h1>Run: {{ run.name }}</h1>
+<div class="row">
+  <div class="col-sm-4">
+      <p><strong>Experiment:</strong> <a href="{% url 'experiment' run.experiment.pk %}">{{ run.experiment.name }}</a></p>
+      <p><strong>Apparatus:</strong> <a href="{% url 'apparatus' run.experiment.apparatus.pk %}">{{ run.experiment.apparatus.name }}</a></p>
+      <p><strong>Facility:</strong> <a href="{% url 'facility-detail' run.experiment.apparatus.facility.name %}">{{ run.experiment.apparatus.facility.name }}</a></p>
+  </div>
+    <div class="col-sm-2">
+      <p><strong>Avg current [A]:</strong> {{ run.avg_current|floatformat }}</p>
+      <p><strong>Stdev current [A]:</strong> {{ run.std_current|floatformat }}</p>
+      <p><strong>Avg voltage [V]:</strong> {{ run.avg_voltage|floatformat }}</p>
+  </div>
+    <div class="col-sm-2">
+      <p><strong>Avg plasma gas [g/s]:</strong> {{ run.avg_plasma_gas|floatformat:3 }}</p>
+      <p><strong>Avg shield gas [g/s]:</strong> {{ run.avg_shield_gas|floatformat:3 }}</p>
+  </div>
+  <div class="col-sm-3">
+      <p><strong>Avg column pressure [Pa]:</strong> {{ run.avg_column_pressure|floatformat }}</p>
+      <p><strong>Avg chamber pressure [Pa]:</strong> {{ run.avg_chamber_pressure|floatformat }}</p>
+  </div>
+</div>
+<p><strong>Notes:</strong> {{ run.notes }}</p>
+<p><strong><a href="{% url 'run-detail-csv' run.pk %}">Download CSV</a></strong></p>
+<div class="row">
+
+	<div class="col-sm-3" style="margin-left:20px;margin-top:20px">
+    <h4>Diagnostics:</h4>
+    
+    {% for diag in diagnostics %}
+      <hr>
+      <p><strong>{{diag.name}}</strong></p>
+    {% endfor %}
+  </div>
+
+  <div class="col-sm-6">
+  {{ div | safe }}
+  {{ script | safe }}
+  </div>
+
+</div> <!-- end row-->
+{% endblock %}
+
+

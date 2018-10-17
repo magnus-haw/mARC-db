@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ apparatus.name }}</title>{% endblock %}
+
+{% block content %}
+  <h1>{{ apparatus.name }}</h1>
+  <p><strong>Facility:</strong> <a href="{% url 'facility-detail' apparatus.facility.name %}">{{ apparatus.facility.name }}</a></p>
+  <p><strong>Notes:</strong> {{ apparatus.notes }}</p>
+  <p><a href="{% url 'upload_xlsx' apparatus.pk %}">Upload Experiment (*.xlsx)</a></p>
+
+  <div style="margin-left:20px;margin-top:20px">
+    <h4>Experiments</h4>
+
+    {% for exp in apparatus.experiment_set.all %}
+      <hr>
+      <p><strong><a href="{% url 'experiment' exp.pk %}">{{exp.name}}</a></strong></p>
+    {% endfor %}
+  </div>
+{% endblock %}
