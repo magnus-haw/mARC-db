@@ -23,13 +23,11 @@ def index(request):
     num_apparatus = Apparatus.objects.count()
     num_experiments = Experiment.objects.count()
     num_runs = Run.objects.count()
-    num_records = Record.objects.count()
     context = {
         'num_facilities':num_facilities,
         'num_apparatus':num_apparatus,
         'num_experiments':num_experiments,
         'num_runs':num_runs,
-        'num_records':num_records,
             }
     return render(request, 'index.html', context=context)
 

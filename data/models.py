@@ -3,6 +3,16 @@ import pandas as pd
 from numpy import array,shape
 # Create your models here.
 
+class Person(models.Model):
+    name = models.CharField(max_length=50,unique=True)
+    notes= models.TextField(null=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
 class Facility(models.Model):
     name = models.CharField(max_length=200,unique=True)
     acronym = models.CharField(max_length=10,unique=True)
@@ -40,20 +50,56 @@ class Experiment(models.Model):
     class Meta:
         ordering = ['date']
 
+class Gas(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+    abbrv = models.CharField(max_length=6,null=True,blank=True,unique=True)
+    notes = models.TextField(null=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+class StingDevice(models.Model):
+    name = models.CharField(max_length=200)
+    sn = models.CharField(max_length=200)
+    size = models.CharField(max_length=200)
+    limits = models.CharField(max_length=200)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
 class Run(models.Model):
     name = models.CharField(max_length=200)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
-    start_index = models.IntegerField(null=True,blank=True)
-    end_index = models.IntegerField(null=True,blank=True)
-    avg_current = models.FloatField(null=True,blank=True)
-    std_current = models.FloatField(null=True,blank=True)
-    avg_voltage = models.FloatField(null=True,blank=True)
-    avg_plasma_gas = models.FloatField(null=True,blank=True)
-    avg_shield_gas = models.FloatField(null=True,blank=True)
-    avg_chamber_pressure = models.FloatField(null=True,blank=True)
-    avg_column_pressure = models.FloatField(null=True,blank=True)
+    date = models.DateTimeField(null=True)
+    test_engineer = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "test_engineer")
+    principle_investigator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL, related_name = "principle_investigator")
+    operator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "operator")
+    objective = models.TextField(null=True)
+    nozzle_exit_diameter = models.FloatField(null=True)
+    total_cathode_time = models.FloatField(null=True)
+    total_arc_on_duration = models.FloatField(null=True)
+    number_disks = models.PositiveSmallIntegerField(null=True,default=3)
+    number_cathode_starts = models.PositiveIntegerField(null=True,default=1)
     
-    notes = models.TextField(null=True)
+    
+    main_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "main_gas")
+    shield_gas =models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL,related_name = "shield_gas")
+    purge_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL,related_name = "purge_gas")
+    
+    procedure = models.TextField(null=True)
+    swivel_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "stingsw")
+    L1_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "L1")
+    L2_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "L2")
+    
+    pretest_photo = models.ImageField(null=True,blank=True)
+    posttest_photo= models.ImageField(null=True,blank=True)
+    video = models.FileField(null=True,blank=True)
+    
+    notes = models.TextField(null=True,blank=True)
     
     class Meta:
         unique_together = (("name", "experiment"),)

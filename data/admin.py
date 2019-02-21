@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Experiment,Diagnostic,Run,Facility,Apparatus
 from .models import Unit,AlternateUnitName,AlternateDiagnosticName
-from .models import Series,Record
+from .models import Series,Record,Person,StingDevice,Gas
 
 # Register your models here.
 
@@ -28,6 +28,18 @@ class SeriesAdmin(admin.ModelAdmin):
 class FacilityAdmin(admin.ModelAdmin):
     list_display = ('name','acronym','notes')
     search_fields = ('name','acronym','notes')
+
+class PersonAdmin(admin.ModelAdmin):
+    list_display = ('name','notes')
+    search_fields = ('name','notes')
+
+class GasAdmin(admin.ModelAdmin):
+    list_display = ('name','abbrv','notes')
+    search_fields = ('name','abbrv','notes')
+
+class StingDeviceAdmin(admin.ModelAdmin):
+    list_display = ('name','sn','size','limits','notes')
+    search_fields = ('name','sn','size','limits','notes')
 
 class ApparatusAdmin(admin.ModelAdmin):
     list_display = ('name','acronym','notes','facility')
@@ -58,5 +70,8 @@ admin.site.register(Facility,FacilityAdmin)
 admin.site.register(Apparatus,ApparatusAdmin)
 admin.site.register(Experiment,ExperimentAdmin)
 admin.site.register(Run,RunAdmin)
+admin.site.register(Gas,GasAdmin)
+admin.site.register(Person,PersonAdmin)
+admin.site.register(StingDevice,StingDeviceAdmin)
 admin.site.register(Diagnostic,DiagnosticAdmin)
 
