@@ -76,6 +76,22 @@ class Run(models.Model):
         diagnostics = Diagnostic.objects.filter(name__in=dg_list)
         return diagnostics
 
+class Condition(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(null=True)
+    user = models.ForeignKey('auth.User',null=True,blank=True,on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return self.name
+
+class Setting(models.Model):
+    condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
+    value = models.FloatField(null=True,blank=True)
+    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
 class RunAggregate(models.Model):
     name = models.CharField(max_length=200)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
