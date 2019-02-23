@@ -11,28 +11,28 @@
 {% endblock %}
 
 {% block content %}
-  <h1>Run: {{ run.name }}</h1>
+{% if user.is_staff %}
+    <a href="{% url "admin:data_run_change" run.pk %}"><h1>Run: {{ run.name }}</h1></a>
+{% else %}
+    <h1>Run: {{ run.name }}</h1>
+{% endif %}
 <div class="row">
-  <div class="col-sm-4">
-      <p><strong>Experiment:</strong> <a href="{% url 'experiment' run.experiment.pk %}">{{ run.experiment.name }}</a></p>
-      <p><strong>Apparatus:</strong> <a href="{% url 'apparatus' run.experiment.apparatus.pk %}">{{ run.experiment.apparatus.name }}</a></p>
-      <p><strong>Facility:</strong> <a href="{% url 'facility-detail' run.experiment.apparatus.facility.name %}">{{ run.experiment.apparatus.facility.name }}</a></p>
-  </div>
-    <div class="col-sm-2">
-      <p><strong>Avg current [A]:</strong> {{ run.avg_current|floatformat }}</p>
-      <p><strong>Stdev current [A]:</strong> {{ run.std_current|floatformat }}</p>
-      <p><strong>Avg voltage [V]:</strong> {{ run.avg_voltage|floatformat }}</p>
-  </div>
-    <div class="col-sm-2">
-      <p><strong>Avg plasma gas [g/s]:</strong> {{ run.avg_plasma_gas|floatformat:3 }}</p>
-      <p><strong>Avg shield gas [g/s]:</strong> {{ run.avg_shield_gas|floatformat:3 }}</p>
-  </div>
   <div class="col-sm-3">
-      <p><strong>Avg column pressure [Pa]:</strong> {{ run.avg_column_pressure|floatformat }}</p>
-      <p><strong>Avg chamber pressure [Pa]:</strong> {{ run.avg_chamber_pressure|floatformat }}</p>
+      <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' run.test.apparatus.pk %}">{{ run.test.apparatus.name }}</a></p>
+      <p><strong>Test:</strong> <a href="{% url 'test' run.test.pk %}">{{ run.test.name }}</a></p>
+      <p><strong>Date:</strong> {{ run.date }}</p>
   </div>
+  <div class="col-sm-4">
+        <p><strong>PI:</strong> {{ run.principle_investigator.name }}</p>
+        <p><strong>Test Engineer:</strong> {{ run.test_engineer.name }}</p>
+        <p><strong>Operator:</strong> {{ run.operator.name }}</p>
+  </div>
+  <div class="col-sm-5">
+      <p><strong>Run objective:</strong> {{ run.objective }}</p>
+      <p><strong>Notes:</strong> {{ run.notes }}</p>
+    </div>
 </div>
-<p><strong>Notes:</strong> {{ run.notes }}</p>
+
 <p><strong><a href="{% url 'run-detail-csv' run.pk %}">Download CSV</a></strong></p>
 <div class="row">
 

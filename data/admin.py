@@ -1,7 +1,11 @@
 from django.contrib import admin
-from .models import Experiment,Diagnostic,Run,Facility,Apparatus
+from .models import Test,Diagnostic,Run,Apparatus
 from .models import Unit,AlternateUnitName,AlternateDiagnosticName
-from .models import Series,Record,Person,StingDevice,Gas
+from .models import Series,Record,Person
+
+from system.models import Condition,HeaterSettings,StingSettings
+from system.models import FileAttachments,GasSettings,DistilledWaterLoop
+from system.models import SensorWaterLoop,VacuumWaterLoop,VacuumSystem
 
 # Register your models here.
 
@@ -9,41 +13,68 @@ from .models import Series,Record,Person,StingDevice,Gas
 def delete_selected(modeladmin, request, queryset):
     queryset.delete()
 
-class ExperimentAdmin(admin.ModelAdmin):
+class TestAdmin(admin.ModelAdmin):
     list_display = ('name','date','notes')
     list_filter = ('date',)
     actions = (delete_selected,)
-    search_fields = ('name','experiment','notes')
+    search_fields = ('name','test','notes')
+
+class VacuumSystemInline(admin.TabularInline):
+    model = VacuumSystem
+
+class FileAttachmentsInline(admin.TabularInline):
+    model = FileAttachments
+
+class SensorWaterLoopInline(admin.StackedInline):
+    model = SensorWaterLoop
+
+class VacuumWaterLoopInline(admin.StackedInline):
+    model = VacuumWaterLoop
+
+class DistilledWaterLoopInline(admin.StackedInline):
+    model = DistilledWaterLoop
+
+class GasSettingsInline(admin.TabularInline):
+    model = GasSettings
+    
+class StingSettingsInline(admin.TabularInline):
+    model = StingSettings
+
+class HeaterSettingsInline(admin.TabularInline):
+    model = HeaterSettings
+
+class ConditionInline(admin.StackedInline):
+    model = Condition
+    extra = 0
 
 class RunAdmin(admin.ModelAdmin):
-    list_display = ('name','experiment','notes')
-    list_filter = ('experiment__date','experiment',)
-    search_fields = ('name','experiment__name','notes')
+    list_display = ('name','test','notes')
+    list_filter = ('test__date','test',)
+    search_fields = ('name','test__name','notes')
+    inlines = [
+               HeaterSettingsInline,
+               GasSettingsInline,
+               ConditionInline,
+               StingSettingsInline,
+               FileAttachmentsInline,
+               DistilledWaterLoopInline,
+               VacuumWaterLoopInline,
+               SensorWaterLoopInline,
+               VacuumSystemInline,
+               ]
 
 class SeriesAdmin(admin.ModelAdmin):
     list_display = ('diagnostic','run',)
-    list_filter = ('run__experiment__apparatus','run__experiment','run__experiment__date',)
-    search_fields = ('name','experiment__name','notes')
-    
-class FacilityAdmin(admin.ModelAdmin):
-    list_display = ('name','acronym','notes')
-    search_fields = ('name','acronym','notes')
+    list_filter = ('run__test__apparatus','run__test','run__test__date',)
+    search_fields = ('name','test__name','notes')
 
 class PersonAdmin(admin.ModelAdmin):
     list_display = ('name','notes')
     search_fields = ('name','notes')
 
-class GasAdmin(admin.ModelAdmin):
-    list_display = ('name','abbrv','notes')
-    search_fields = ('name','abbrv','notes')
-
-class StingDeviceAdmin(admin.ModelAdmin):
-    list_display = ('name','sn','size','limits','notes')
-    search_fields = ('name','sn','size','limits','notes')
-
 class ApparatusAdmin(admin.ModelAdmin):
-    list_display = ('name','acronym','notes','facility')
-    search_fields = ('name','acronym','notes','facility')
+    list_display = ('name','acronym','notes')
+    search_fields = ('name','acronym','notes')
 
 class AlternateDiagnosticNameInline(admin.TabularInline):
     model = AlternateDiagnosticName
@@ -66,12 +97,9 @@ class DiagnosticAdmin(admin.ModelAdmin):
 
 admin.site.register(Series,SeriesAdmin)
 admin.site.register(Unit,UnitAdmin)
-admin.site.register(Facility,FacilityAdmin)
 admin.site.register(Apparatus,ApparatusAdmin)
-admin.site.register(Experiment,ExperimentAdmin)
+admin.site.register(Test,TestAdmin)
 admin.site.register(Run,RunAdmin)
-admin.site.register(Gas,GasAdmin)
 admin.site.register(Person,PersonAdmin)
-admin.site.register(StingDevice,StingDeviceAdmin)
 admin.site.register(Diagnostic,DiagnosticAdmin)
 

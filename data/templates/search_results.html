@@ -13,8 +13,8 @@
 {% for d in diagnostics %}{{d}},&nbsp;{% endfor %}
 </p>
 
-<p><strong>Spreadsheets:</strong>
-{% for d in experiments %}{{d}},&nbsp;{% endfor %}
+<p><strong>Tests:</strong>
+{% for d in tests %}{{d}},&nbsp;{% endfor %}
 </p>
 
 <p><a href="{% url 'search-csv' apparatus_pk %}?

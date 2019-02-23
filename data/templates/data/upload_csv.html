@@ -2,8 +2,8 @@
 
 {% block content %}
 <p><h2>Upload Run</h2></p>
-<p><a href="{% url 'experiment' experiment_pk %}">Back to experiment</a></p>
-<form action="{% url "upload_csv" experiment_pk%}" method="POST" enctype="multipart/form-data" class="form-horizontal"> 
+<p><a href="{% url 'test' test_pk %}">Back to test</a></p>
+<form action="{% url "upload_csv" test_pk%}" method="POST" enctype="multipart/form-data" class="form-horizontal">
 {% csrf_token %}
 {{form.as_p}}
 <div class="form-group">                    
@@ -26,7 +26,7 @@
 
 
 {% comment %}
-<form action="{% url "upload_csv" experiment_pk%}" method="POST" enctype="multipart/form-data" class="form-horizontal"> 
+<form action="{% url "upload_csv" test_pk%}" method="POST" enctype="multipart/form-data" class="form-horizontal"> 
 {% csrf_token %}
 <div class="form-group">
     <label for="name" class="col-md-3 col-sm-3 col-xs-12 control-label">File: </label>

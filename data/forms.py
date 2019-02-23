@@ -1,9 +1,9 @@
 from django import forms
-from .models import Record,Series,Experiment,Diagnostic
+from .models import Record,Series,Test,Diagnostic
 
 class SearchForm(forms.Form):
-    experiments = forms.ModelMultipleChoiceField( 
-            queryset = Experiment.objects.all(),
+    tests = forms.ModelMultipleChoiceField(
+            queryset = Test.objects.all(),
             required=False,
             )
     #sheets = forms.MultipleChoiceField(
@@ -16,7 +16,7 @@ class SearchForm(forms.Form):
             required=False,
             )
 
-class UploadExperimentForm(forms.Form):
+class UploadTestForm(forms.Form):
     name = forms.CharField(max_length=50)
     date = forms.DateField()
     file = forms.FileField()

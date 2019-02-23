@@ -3,8 +3,8 @@
 {% block title %}<title>Upload *.xlsx</title>{% endblock %}
 
 {% block content %}
-<p><h2>Upload Experiment</h2></p>
-<p><a href="{% url 'apparatus' apparatus_pk %}">Back to experiments</a></p>
+<p><h2>Upload Test</h2></p>
+<p><a href="{% url 'apparatus' apparatus_pk %}">Back to tests</a></p>
 <form action="{% url "upload_xlsx" apparatus_pk%}" method="POST" enctype="multipart/form-data" class="form-horizontal"> 
 {% csrf_token %}
 {{form.as_p}}

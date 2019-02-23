@@ -1,5 +1,5 @@
-from data.models import Diagnostic,Experiment,Run,Record,Facility,Apparatus,Series
-from data.forms import SearchForm,UploadExperimentForm,UploadRunForm
+from data.models import Diagnostic,Test,Run,Record,Apparatus,Series
+from data.forms import SearchForm,UploadTestForm,UploadRunForm
 
 from django.shortcuts import render,render_to_response,get_object_or_404
 from django.http import HttpResponse,HttpResponseRedirect
@@ -19,54 +19,42 @@ import csv
 import time
 
 def index(request):
-    num_facilities = Facility.objects.count()
     num_apparatus = Apparatus.objects.count()
-    num_experiments = Experiment.objects.count()
+    num_tests = Test.objects.count()
     num_runs = Run.objects.count()
     context = {
-        'num_facilities':num_facilities,
         'num_apparatus':num_apparatus,
-        'num_experiments':num_experiments,
+        'num_tests':num_tests,
         'num_runs':num_runs,
             }
     return render(request, 'index.html', context=context)
 
-def FacilitiesView(request):
-    facilities = Facility.objects.all()
+def ApparatusListView(request):
+    apps = Apparatus.objects.all()
     
     context = {
-        'facilities':facilities,
+        'apparatus':apps,
             }
-    return render(request, 'data/facility_list.html', context=context)
+    return render(request, 'data/apparatus_list.html', context=context)
 
-def FacilityDetailView(request,facility_name):
-    facility = get_object_or_404(Facility, name=facility_name)
-    apparatus = facility.apparatus_set.all()
-    
-    context = {
-        'facility':facility,
-        'apparatus':apparatus,
-            }
-    return render(request, 'data/facility_detail.html', context=context)
-
-def ApparatusView(request,apparatus_pk):
+def ApparatusDetailView(request,apparatus_pk):
     app = get_object_or_404(Apparatus, pk=apparatus_pk)
-    exp_set = app.experiment_set.all()
+    test_set = app.test_set.all()
     
     context = {
             'apparatus':app,
-            'experiments':exp_set,
+            'tests':test_set,
             }
     return render(request, 'data/apparatus_detail.html', context = context)
 
-def ExperimentView(request,experiment_pk):
-    exp = Experiment.objects.get(pk=experiment_pk)
+def TestView(request,test_pk):
+    test = Test.objects.get(pk=test_pk)
     
     context = {
-            'experiment':exp,
-            'apparatus':exp.apparatus,
+            'test':test,
+            'apparatus':test.apparatus,
             }
-    return render(request, 'data/experiment_detail.html', context = context)
+    return render(request, 'data/test_detail.html', context = context)
 
 def find_diagnostic(name):
     dgs = Diagnostic.objects.filter(name = name)
@@ -79,10 +67,10 @@ def find_diagnostic(name):
                 return dg
         return None
 
-def upload_run(runname,df,exp,batch_size=100):
-    print(df.describe(),exp,runname)
+def upload_run(runname,df,test,batch_size=100):
+    print(df.describe(),test,runname)
     if df.columns[0] != '':
-        run,created_run = Run.objects.get_or_create(name=runname, experiment=exp)
+        run,created_run = Run.objects.get_or_create(name=runname, test=test)
         run.save()
         
         for col_name in df.columns:            
@@ -99,7 +87,7 @@ def upload_run(runname,df,exp,batch_size=100):
     return
 
 @transaction.atomic
-def upload_csv(request,experiment_pk):
+def upload_csv(request,test_pk):
     ### After file is chosen and uploaded, do this
     if request.method == 'POST':
         form = UploadRunForm(request.POST, request.FILES)
@@ -111,15 +99,15 @@ def upload_csv(request,experiment_pk):
             if not csv_file.name.endswith('.csv'):
                 messages.error(request,'File is not CSV type')
                 return render(request, "data/upload_csv.html",
-                              context={"experiment_pk":experiment_pk,
+                              context={"test_pk":test_pk,
                                        "success":success,
                                        "show_response":True,
                                        "form":form,
                                       })
             try:
-                exp = Experiment.objects.get(pk=experiment_pk)
+                test = Test.objects.get(pk=test_pk)
                 df = pd.read_csv(csv_file)
-                upload_run(run_name,df,exp)
+                upload_run(run_name,df,test)
                 success=True
                 
             except Exception as e:
@@ -129,7 +117,7 @@ def upload_csv(request,experiment_pk):
         ### After upload redirect to here
         return render(request, "data/upload_csv.html",
                       context={
-                          "experiment_pk":experiment_pk,
+                          "test_pk":test_pk,
                           "success":success,
                           "show_response":True,
                           "form":form,
@@ -138,7 +126,7 @@ def upload_csv(request,experiment_pk):
         form = UploadRunForm()
         return render(request, "data/upload_csv.html",
                       context={
-                          "experiment_pk":experiment_pk,
+                          "test_pk":test_pk,
                           "show_response":False,
                           "form":form,
                           })
@@ -147,12 +135,12 @@ def upload_csv(request,experiment_pk):
 def upload_xlsx(request,apparatus_pk):
     ### After file is chosen and uploaded, do this
     if request.method == 'POST':
-        form = UploadExperimentForm(request.POST, request.FILES)
+        form = UploadTestForm(request.POST, request.FILES)
         success = False
         if form.is_valid():
             file = request.FILES["file"]
             date = form.cleaned_data['date']
-            exp_name = form.cleaned_data['name']
+            test_name = form.cleaned_data['name']
 
             if not file.name.endswith('.xlsx'):
                 messages.error(request,'File is not xlsx type')
@@ -166,10 +154,10 @@ def upload_xlsx(request,apparatus_pk):
                 dfdict = pd.read_excel(file,sheet_name=None)
 
                 app = Apparatus.objects.get(pk=apparatus_pk)
-                exp,exp_created = Experiment.objects.get_or_create(name=exp_name,apparatus=app,date=date)
+                test,test_created = Test.objects.get_or_create(name=test_name,apparatus=app,date=date)
                 
                 for sheetname,df in dfdict.items():
-                    upload_run(sheetname,df,exp)
+                    upload_run(sheetname,df,test)
                 success=True
                 
             except Exception as e:
@@ -185,7 +173,7 @@ def upload_xlsx(request,apparatus_pk):
                           "form":form,
                           })
     else: # Show upload form
-        form = UploadExperimentForm()
+        form = UploadTestForm()
         return render(request, "data/upload_xlsx.html",
                       context={
                           "apparatus_pk":apparatus_pk,
@@ -200,13 +188,13 @@ def ViewDiagnostic(request,pk):
     series_set = Series.objects.filter(diagnostic=pk)
     run_list = list(set(series_set.values_list('run',flat=True)))
     run_set = Run.objects.filter(name__in=run_list)
-    exp_list = list(set(run_set.values_list('experiment',flat=True)))
-    exp_set = Experiment.objects.filter(name__in=exp_list)
+    test_list = list(set(run_set.values_list('test',flat=True)))
+    test_set = Test.objects.filter(name__in=test_list)
     
     context = {
             'diagnostic':dg,
             'runs':run_set,
-            'experiment_list':exp_set,
+            'test_list':test_set,
             }
     return render(request, 'data/diagnostic_detail.html', context = context)
 
@@ -214,7 +202,7 @@ def DownloadRunCSV(request,run_pk):
     run = get_object_or_404(Run, pk=run_pk)
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="%s"'%(run.experiment.name+'_'+run.name+'_'+'mARC.csv')
+    response['Content-Disposition'] = 'attachment; filename="%s"'%(run.test.name+'_'+run.name+'_'+'mARC.csv')
     writer = csv.writer(response)
 
     df = run.get_dataframe()
@@ -223,10 +211,10 @@ def DownloadRunCSV(request,run_pk):
     return response
 
 def SearchView(request):
-    facilities = Facility.objects.all()
+    apps = Apparatus.objects.all()
     
     context = {
-        'facilities':facilities,
+        'apparatus':apps,
             }
     return render(request, 'search-base.html', context=context)
 
@@ -238,19 +226,19 @@ def SearchData(request,apparatus_pk):
 
         # Check if the form is valid:
         if form.is_valid():
-            exps = form.cleaned_data['experiments']
+            tests = form.cleaned_data['tests']
             diags =  form.cleaned_data['diagnostics']
             tname = 'Time [s]'
             #time_diag = Diagnostic.objects.filter(name=tname)
             diags = diags 
 
             dflist,serieslist = [],[]
-            for exp in exps:
-                runs = exp.run_set.all()
+            for test in tests:
+                runs = test.run_set.all()
                 for r in runs:
                     series = r.series_set.filter(diagnostic__in=diags)
                     df = pd.DataFrame()
-                    df.experiment = exp.name
+                    df.test = test.name
                     df.run = r.name
                     slist =[]
                     for s in series:
@@ -269,7 +257,7 @@ def SearchData(request,apparatus_pk):
                     fig = figure(x_axis_label= tname,y_axis_label=d.name,
                             plot_width =1000,plot_height =600)
                     for df in dflist:
-                        fig.line(df[tname], df[d.name],line_width = 1, legend= df.run+'_'+df.experiment, line_color=mycolors[mycolor_ind])
+                        fig.line(df[tname], df[d.name],line_width = 1, legend= df.run+'_'+df.test, line_color=mycolors[mycolor_ind])
                         mycolor_ind = (mycolor_ind+1)%len(mycolors)
                     fig.legend.click_policy="hide"
                     myfigs.append(fig)
@@ -280,15 +268,15 @@ def SearchData(request,apparatus_pk):
                 print('Plotting error')
                 script,div = '','' 
             context = {'form': form,'serieslist':serieslist,'apparatus_pk':apparatus_pk,
-                       'experiments':exps,'diagnostics':diags,'script':script,'div':div}
+                       'tests':tests,'diagnostics':diags,'script':script,'div':div}
             
             # render results:
             return render(request, 'search_results.html', context)
     
     else:
         form = SearchForm()
-        form.fields["experiments"].queryset = Experiment.objects.filter(apparatus__pk=apparatus_pk)
-        form.fields['experiments'].widget.attrs['size']='15'
+        form.fields["tests"].queryset = Test.objects.filter(apparatus__pk=apparatus_pk)
+        form.fields['tests'].widget.attrs['size']='15'
         form.fields["diagnostics"].queryset = Diagnostic.objects.filter(apparatus__pk=apparatus_pk).exclude(name="Time [s]")
         form.fields['diagnostics'].widget.attrs['size']='15'
 
@@ -305,7 +293,7 @@ def DownloadSearchCSV(request,apparatus_pk):
     dflist =[]
     for s in series:
         df = pd.DataFrame()
-        label = s.diagnostic.name +'_'+ s.run.name + '_' + s.run.experiment.name
+        label = s.diagnostic.name +'_'+ s.run.name + '_' + s.run.test.name
         df[label] = s.record_set.all().order_by('index').values_list('value',flat=True)
         dflist.append(df)
     df_all = pd.concat(dflist,axis=1)
