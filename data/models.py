@@ -70,7 +70,6 @@ class Run(models.Model):
         dg_list = Series.objects.filter(run=self).values_list('diagnostic__name',flat=True)
         diagnostics = Diagnostic.objects.filter(name__in=dg_list)
         return diagnostics
-    
 
 class Unit(models.Model):
     name = models.CharField(max_length=50,unique=True)
