@@ -65,16 +65,16 @@ class VacuumSystem(models.Model):
 class GasSettings(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
     main_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "main_gas")
-    main_gas_initial_pressure = models.FloatField(verbose_name="main gas initial pressure (PSIG)",null=True)
-    main_gas_final_pressure = models.FloatField(verbose_name="main gas final pressure (PSIG)",null=True)
+    main_gas_initial_pressure = models.FloatField(verbose_name="main gas initial pressure (PSIG)",null=True,blank=True)
+    main_gas_final_pressure = models.FloatField(verbose_name="main gas final pressure (PSIG)",null=True,blank=True)
     
     shield_gas =models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL,related_name = "shield_gas")
-    shield_gas_initial_pressure = models.FloatField(verbose_name="shield gas initial pressure (PSIG)",null=True)
-    shield_gas_final_pressure = models.FloatField(verbose_name="shield gas final pressure (PSIG)",null=True)
+    shield_gas_initial_pressure = models.FloatField(verbose_name="shield gas initial pressure (PSIG)",null=True,blank=True)
+    shield_gas_final_pressure = models.FloatField(verbose_name="shield gas final pressure (PSIG)",null=True,blank=True)
 
     purge_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL,related_name = "purge_gas")
-    purge_gas_initial_pressure = models.FloatField(verbose_name="purge gas initial pressure (PSIG)",null=True)
-    purge_gas_final_pressure = models.FloatField(verbose_name="purge gas final pressure (PSIG)",null=True)
+    purge_gas_initial_pressure = models.FloatField(verbose_name="purge gas initial pressure (PSIG)",null=True,blank=True)
+    purge_gas_final_pressure = models.FloatField(verbose_name="purge gas final pressure (PSIG)",null=True,blank=True)
 
     class Meta:
         verbose_name_plural="gas settings"
