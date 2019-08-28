@@ -64,9 +64,9 @@ class VacuumSystem(models.Model):
     
 class GasSettings(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    main_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "main_gas")
-    main_gas_initial_pressure = models.FloatField(verbose_name="main gas initial pressure (PSIG)",null=True,blank=True)
-    main_gas_final_pressure = models.FloatField(verbose_name="main gas final pressure (PSIG)",null=True,blank=True)
+    plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "plasma_gas")
+    plasma_gas_initial_pressure = models.FloatField(verbose_name="plasma gas initial pressure (PSIG)",null=True,blank=True)
+    plasma_gas_final_pressure = models.FloatField(verbose_name="plasma gas final pressure (PSIG)",null=True,blank=True)
     
     shield_gas =models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL,related_name = "shield_gas")
     shield_gas_initial_pressure = models.FloatField(verbose_name="shield gas initial pressure (PSIG)",null=True,blank=True)
@@ -108,16 +108,29 @@ class FileAttachments(models.Model):
         verbose_name_plural="file attachments"
 
 class Condition(models.Model):
+    name = models.CharField(max_length=100)
+    current = models.FloatField(default=40,verbose_name="Current (A)")
+    plasma_gas_flow = models.FloatField(default=0,verbose_name="plasma gas flow (g/s)")
+    shield_gas_flow = models.FloatField(default=0,verbose_name="shield gas flow (g/s)")
+    nozzle_diameter = models.FloatField(default=1,verbose_name="nozzle diameter (cm)")
+    shield_gas = models.ForeignKey(Gas,null=True,on_delete=models.CASCADE, related_name = "Shield_gas")
+    plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.CASCADE, related_name = "Plasma_gas")
+
+    def __str__(self):
+        return self.name
+
+class ConditionInstance(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)
-    name = models.CharField(max_length=15)
+    condition = models.ForeignKey(Condition,on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
     dwell_time = models.FloatField(default=200,verbose_name="dwell time (s)")
     start_time = models.FloatField(verbose_name="start time (s)",null=True,blank=True)
     end_time = models.FloatField(verbose_name="end time (s)",null=True,blank=True)
-    current = models.FloatField(default=40,verbose_name="Current (A)")
-    main_gas_flow = models.FloatField(default=0,verbose_name="main gas flow (g/s)")
-    shield_gas_flow = models.FloatField(default=0,verbose_name="shield gas flow (g/s)")
-    purge_gas_flow = models.FloatField(default=0,verbose_name="purge gas flow (g/s)")
-    nozzle_distance = models.FloatField(default=6,verbose_name="nozzle distance (cm)")
+
+    def __str__(self):
+        return self.name
+
+class StingInsertion(models.Model):
     swivel_sting_duration = models.FloatField(default=0,verbose_name="swivel sting duration (s)")
     L1_sting_duration = models.FloatField(default=0,verbose_name="L1 sting duration (s)")
     L2_sting_duration = models.FloatField(default=0,verbose_name="L2 sting duration (s)")

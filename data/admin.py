@@ -3,7 +3,7 @@ from .models import Test,Diagnostic,Run,Apparatus
 from .models import Unit,AlternateUnitName,AlternateDiagnosticName
 from .models import Series,Record,Person
 
-from system.models import Condition,HeaterSettings,StingSettings
+from system.models import ConditionInstance,HeaterSettings,StingSettings
 from system.models import FileAttachments,GasSettings,DistilledWaterLoop
 from system.models import SensorWaterLoop,VacuumWaterLoop,VacuumSystem
 
@@ -44,8 +44,8 @@ class HeaterSettingsInline(admin.TabularInline):
     model = HeaterSettings
 
 class ConditionInline(admin.StackedInline):
-    model = Condition
-    extra = 0
+    model = ConditionInstance
+    extra = 1
 
 class RunAdmin(admin.ModelAdmin):
     list_display = ('name','test','notes')
