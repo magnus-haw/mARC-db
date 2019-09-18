@@ -64,7 +64,7 @@ class RunAdmin(admin.ModelAdmin):
                ]
 
 class SeriesAdmin(admin.ModelAdmin):
-    list_display = ('diagnostic','run',)
+    list_display = ('name','diagnostic','run',)
     list_filter = ('run__test__apparatus','run__test','run__test__date',)
     search_fields = ('name','test__name','notes')
 
@@ -90,7 +90,8 @@ class UnitAdmin(admin.ModelAdmin):
     ]
 
 class DiagnosticAdmin(admin.ModelAdmin):
-    list_display = ('name','units','sensor','notes')
+    list_display = ('name','apparatus','units','sensor','notes')
+    list_filter = ('apparatus','units',)
     inlines = [
         AlternateDiagnosticNameInline,
     ]

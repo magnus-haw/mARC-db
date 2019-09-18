@@ -61,14 +61,14 @@ class Run(models.Model):
         series = Series.objects.filter(run=self)
         col_data, col_names = [],[]
         for s in series:
-            col_names.append(s.name)
+            col_names.append(s.diagnostic.name)
             col_data.append( s.record_set.order_by('index').values_list('value',flat=True) )
         d = array( col_data ).T
         return pd.DataFrame(d,columns=col_names)
         
     def get_diagnostics(self):
         dg_list = Series.objects.filter(run=self).values_list('diagnostic__name',flat=True)
-        diagnostics = Diagnostic.objects.filter(name__in=dg_list)
+        diagnostics = Diagnostic.objects.filter(name__in=dg_list,apparatus=self.test.apparatus)
         return diagnostics
 
 class Unit(models.Model):
@@ -82,7 +82,7 @@ class AlternateUnitName(models.Model):
     units = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
 class Diagnostic(models.Model):
-    name = models.CharField(max_length=50,unique=True)
+    name = models.CharField(max_length=50)
     units = models.ForeignKey(Unit, on_delete=models.CASCADE)
     apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
     notes = models.TextField(blank=True,null=True)
@@ -95,7 +95,7 @@ class Diagnostic(models.Model):
         return self.name
 
 class AlternateDiagnosticName(models.Model):
-    name = models.CharField(max_length=50,unique=True)
+    name = models.CharField(max_length=50)
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
 
 class Series(models.Model):

@@ -56,12 +56,12 @@ def TestView(request,test_pk):
             }
     return render(request, 'data/test_detail.html', context = context)
 
-def find_diagnostic(name):
-    dgs = Diagnostic.objects.filter(name = name)
+def find_diagnostic(name,apparatus):
+    dgs = Diagnostic.objects.filter(name = name, apparatus=apparatus)
     if len(dgs)==1:
         return dgs[0]
     else:
-        dgs = Diagnostic.objects.all()
+        dgs = Diagnostic.objects.filter(apparatus=apparatus)
         for dg in dgs:
             if name in dg.alternatediagnosticname_set.values_list('name',flat=True):
                 return dg
@@ -74,9 +74,10 @@ def upload_run(runname,df,test,batch_size=100):
         run.save()
         
         for col_name in df.columns:            
-            diagnostic = find_diagnostic(col_name)
+            diagnostic = find_diagnostic(col_name,test.apparatus.pk)
             if diagnostic != None:
-                series,created_series = Series.objects.get_or_create(name=diagnostic.name,run=run,diagnostic=diagnostic)
+                series,created_series = Series.objects.get_or_create(name=runname+"_"+diagnostic.name,
+                                                                     run=run,diagnostic=diagnostic)
                 if created_series:
                     print(series.diagnostic)
                     series.save()
@@ -249,18 +250,19 @@ def SearchData(request,apparatus_pk):
                         df[tname] = ts.record_set.all().order_by('index').values_list('value',flat=True)
                         serieslist += [ts.pk]+ slist
                         dflist.append(df)
+            print(df.columns)
             
             mycolor_ind =0
             myfigs = []
             for d in diags.exclude(name=tname):
-                if d.name in df.columns:
-                    fig = figure(x_axis_label= tname,y_axis_label=d.name,
-                            plot_width =1000,plot_height =600)
-                    for df in dflist:
+                fig = figure(x_axis_label= tname,y_axis_label=d.name,
+                        plot_width =1000,plot_height =600)
+                for df in dflist:
+                    if d.name in df.columns:
                         fig.line(df[tname], df[d.name],line_width = 1, legend= df.run+'_'+df.test, line_color=mycolors[mycolor_ind])
                         mycolor_ind = (mycolor_ind+1)%len(mycolors)
-                    fig.legend.click_policy="hide"
-                    myfigs.append(fig)
+                fig.legend.click_policy="hide"
+                myfigs.append(fig)
             bigplot = column(*myfigs)
             try:
                 script, div = components(bigplot)
