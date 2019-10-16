@@ -68,7 +68,7 @@
 <hr>
 
 <!-- Conditions -->
-{% if run.condition_set.all %}
+{% if run.conditioninstance_set.all %}
 <div class="row">
     <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Conditions</h4></div>
 </div>
@@ -78,26 +78,18 @@
         <th>Name</th>
         <th>Dwell Time (s)</th>
         <th>Current (A)</th>
-        <th>Main gas (g/s)</th>
+        <th>Plasma gas (g/s)</th>
         <th>Shield gas (g/s)</th>
-        <th>Purge gas (g/s)</th>
         <th>Nozzle (cm)</th>
-        <th>Swivel duration (s)</th>
-        <th>L1 duration (s)</th>
-        <th>L2 duration (s)</th>
     </tr>
-    {% for cond in run.condition_set.all %}
+    {% for cond in run.conditioninstance_set.all %}
         <tr>
-            <td>{{cond.name}}</td>
+            <td>{{cond.condition.name}}</td>
             <td>{{cond.dwell_time}}</td>
-            <td>{{cond.current}}</td>
-            <td>{{cond.main_gas_flow}}</td>
-            <td>{{cond.shield_gas_flow}}</td>
-            <td>{{cond.purge_gas_flow}}</td>
-            <td>{{cond.nozzle_distance}}</td>
-            <td>{{cond.swivel_sting_duration}}</td>
-            <td>{{cond.L1_sting_duration}}</td>
-            <td>{{cond.L2_sting_duration}}</td>
+            <td>{{cond.condition.current}}</td>
+            <td>{{cond.condition.plasma_gas_flow}}</td>
+            <td>{{cond.condition.shield_gas_flow}}</td>
+            <td>{{cond.condition.nozzle_diameter}}</td>
         </tr>
     {% endfor %}
     </table>
@@ -120,9 +112,9 @@
             <th>Purge gas</th>
         </tr>
         <tr>
-            <td>{{run.gassettings.main_gas.name}}</td>
+            <td>{{run.gassettings.plasma_gas.name}}</td>
             <td>{{run.gassettings.shield_gas.name}}</td>
-            <td>{{cond.run.gassettings.name}}</td>
+            <td>{{run.gassettings.purge_gas.name}}</td>
         </tr>
     </table>
 </div>
@@ -141,13 +133,13 @@
     <div class="col-sm-2"><a href="{{run.fileattachments.run_sheet.url}}">Run Sheet</a></div>
     {%endif%}
     {% if run.fileattachments.pretest_photo %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.pretest_photo}}">Pretest Photo</a></div>
+    <div class="col-sm-2"><a href="{{run.fileattachments.pretest_photo.url}}">Pretest Photo</a></div>
     {%endif%}
     {% if run.fileattachments.posttest_photo %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.posttest_photo}}">Posttest Photo</a></div>
+    <div class="col-sm-2"><a href="{{run.fileattachments.posttest_photo.url}}">Posttest Photo</a></div>
     {%endif%}
     {% if run.fileattachments.video %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.video}}">Video</a></div>
+    <div class="col-sm-2"><a href="{{run.fileattachments.video.url}}">Video</a></div>
     {%endif%}
 </div>
 <!-- end files-->

@@ -26,23 +26,17 @@ class StingDevice(models.Model):
 
 class VacuumWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    temperature = models.FloatField(verbose_name="HCW-ST-101 Temp (F)",null=True)
-    conductivity= models.FloatField(verbose_name="HCW-ST-101 Conduct. (mS)",null=True)
-    arc_supply_pressure = models.FloatField(verbose_name="HCW-PI-130 Arc supply (PSIG)",null=True)
-    arc_return_pressure = models.FloatField(verbose_name="HCW-PI-133 Arc return (PSIG)",null=True)
-    spare_supply_pressure = models.FloatField(verbose_name="HCW-PI-140 Spare supply (PSIG)",null=True)
-    spare_return_pressure = models.FloatField(verbose_name="HCW-PI-146 Spare return (PSIG)",null=True)
-    chamber_supply_pressure = models.FloatField(verbose_name="HCW-PI-147 Chamber supply (PSIG)",null=True)
+    ex_pressure = models.FloatField(verbose_name="VPW-PI-220 heat ex. Press (PSIG)",null=True)
+    ex_flow= models.FloatField(verbose_name="VPW-FI-220 heat ex. Press (GPM)",null=True)
+    vac_pressure = models.FloatField(verbose_name="VPW-PI-230 vac. pump Press. (PSIG)",null=True)
+    vac_flow = models.FloatField(verbose_name="VPW-FI-230 vac. pump Flow (GPM)",null=True)
+    vac_exit_temperature = models.FloatField(verbose_name="VPW-TI-280 vac. pump exit T (F)",null=True)
     
 class SensorWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    temperature = models.FloatField(verbose_name="HCW-ST-101 Temp (F)",null=True)
-    conductivity= models.FloatField(verbose_name="HCW-ST-101 Conduct. (mS)",null=True)
-    arc_supply_pressure = models.FloatField(verbose_name="HCW-PI-130 Arc supply (PSIG)",null=True)
-    arc_return_pressure = models.FloatField(verbose_name="HCW-PI-133 Arc return (PSIG)",null=True)
-    spare_supply_pressure = models.FloatField(verbose_name="HCW-PI-140 Spare supply (PSIG)",null=True)
-    spare_return_pressure = models.FloatField(verbose_name="HCW-PI-146 Spare return (PSIG)",null=True)
-    chamber_supply_pressure = models.FloatField(verbose_name="HCW-PI-147 Chamber supply (PSIG)",null=True)
+    temperature = models.FloatField(verbose_name="SKW-TI-401 Temp (F)",null=True)
+    conductivity= models.FloatField(verbose_name="SKW-ST-401 Conduct. (uS)",null=True)
+    arc_supply_pressure = models.FloatField(verbose_name="SKW-PI-440 sensor supply (PSIG)",null=True)
     
 class DistilledWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
@@ -84,7 +78,7 @@ class HeaterSettings(models.Model):
     nozzle_exit_diameter = models.FloatField(null=True,verbose_name="nozzle exit diameter (cm)")
     total_cathode_time = models.FloatField(null=True,verbose_name="total cathode time (s)")
     total_arc_on_duration = models.FloatField(null=True,verbose_name="total arc-on duration (s)")
-    number_disks = models.PositiveSmallIntegerField(null=True,default=3)
+    number_disks = models.PositiveSmallIntegerField(null=True,default=2)
     number_cathode_starts = models.PositiveIntegerField(null=True,default=1)
     class Meta:
         verbose_name_plural="heater settings"
