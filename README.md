@@ -22,9 +22,18 @@ $ pip install -r requirements.txt
 ```
 
 ### Run server
-Paste the database file: db.sqlite3 into the mARC-db/ folder. Then execute the following command in the mARC-db/ folder:
+Execute the following command in the mARC-db/ folder:
 ```
 $ python manage.py runserver
 
 ```
-Then the database interface should be accessible at: [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+Alternatively Windows users can create a '.bat' file (e.g. run-mARC-server.bat) with the following content:
+```
+ECHO OFF
+ECHO This is the mARC 2.0 database server. Interface accesible through browser at: http://127.0.0.1:8000
+c:\Users\%USERNAME%\AppData\Local\Continuum\anaconda3\python.exe "Z:\mARC II documents\mARC-db\manage.py" runserver
+```
+The location of the python executable and the mARC-db folder may need to be changed depending on the users installation. 
+Running this '.bat' file will also start the server.
+
+After starting the server, the database interface should be accessible at: [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
