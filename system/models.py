@@ -40,8 +40,8 @@ class SensorWaterLoop(models.Model):
     
 class DistilledWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    temperature = models.FloatField(verbose_name="HCW-ST-101 Temp (F)",null=True)
-    conductivity= models.FloatField(verbose_name="HCW-ST-101 Conduct. (mS)",null=True)
+    temperature = models.FloatField(verbose_name="HCW-TI-101 Temp (F)",null=True)
+    conductivity= models.FloatField(verbose_name="HCW-ST-101 Conduct. (uS)",null=True)
     arc_supply_pressure = models.FloatField(verbose_name="HCW-PI-130 Arc supply (PSIG)",null=True)
     arc_return_pressure = models.FloatField(verbose_name="HCW-PI-133 Arc return (PSIG)",null=True)
     spare_supply_pressure = models.FloatField(verbose_name="HCW-PI-140 Spare supply (PSIG)",null=True)
@@ -97,6 +97,7 @@ class FileAttachments(models.Model):
     pretest_photo = models.ImageField(null=True,blank=True)
     posttest_photo= models.ImageField(null=True,blank=True)
     video = models.FileField(null=True,blank=True)
+    spectra = models.FileField(null=True,blank=True)
 
     class Meta:
         verbose_name_plural="file attachments"
