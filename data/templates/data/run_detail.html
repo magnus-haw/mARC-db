@@ -141,6 +141,9 @@
     {% if run.fileattachments.video %}
     <div class="col-sm-2"><a href="{{run.fileattachments.video.url}}">Video</a></div>
     {%endif%}
+    {% if run.fileattachments.spectra %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.spectra.url}}">Spectra</a></div>
+    {%endif%}
 </div>
 <!-- end files-->
 <hr>
