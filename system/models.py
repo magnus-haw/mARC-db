@@ -24,6 +24,52 @@ class StingDevice(models.Model):
     def __str__(self):
         return self.name
 
+class CameraPosition(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class OpticalFilter(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class Lens(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural="lenses"
+
+class Camera(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class Nozzle(models.Model):
+    name = models.CharField(max_length=200)
+    diameter = models.FloatField(verbose_name="Diameter (cm)",null=True)
+    notes = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class CameraSettings(models.Model):
+    run = models.ForeignKey(Run,on_delete=models.CASCADE)
+    camera = models.ForeignKey(Camera,blank=True,null=True,on_delete=models.SET_NULL)
+    lens   = models.ForeignKey(Lens,blank=True,null=True,on_delete=models.SET_NULL)
+    opticalfilter = models.ForeignKey(OpticalFilter,blank=True,null=True,on_delete=models.SET_NULL)
+    CameraPosition = models.ForeignKey(CameraPosition,blank=True,null=True,on_delete=models.SET_NULL)
+
 class VacuumWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
     ex_pressure = models.FloatField(verbose_name="VPW-PI-220 heat ex. Press (PSIG)",null=True)
@@ -75,7 +121,7 @@ class GasSettings(models.Model):
 
 class HeaterSettings(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    nozzle_exit_diameter = models.FloatField(null=True,verbose_name="nozzle exit diameter (cm)")
+    nozzle = models.ForeignKey(Nozzle,null=True,on_delete=models.SET_NULL)
     total_cathode_time = models.FloatField(null=True,verbose_name="total cathode time (s)")
     total_arc_on_duration = models.FloatField(null=True,verbose_name="total arc-on duration (s)")
     number_disks = models.PositiveSmallIntegerField(null=True,default=2)
@@ -102,25 +148,42 @@ class FileAttachments(models.Model):
     class Meta:
         verbose_name_plural="file attachments"
 
+class PhotoAttachment(models.Model):
+    run = models.ForeignKey(Run,on_delete=models.CASCADE)
+    photo = models.ImageField(null=True,blank=True)
+
+    class Meta:
+        verbose_name_plural="photos"
+
+##class FileAttachment(models.Model):
+##    run = models.ForeignKey(Run,on_delete=models.CASCADE)
+##    file = models.FileField(null=True,blank=True)
+##
+##    class Meta:
+##        verbose_name_plural="files"
+
 class Condition(models.Model):
     name = models.CharField(max_length=100)
     current = models.FloatField(default=40,verbose_name="Current (A)")
     plasma_gas_flow = models.FloatField(default=0,verbose_name="plasma gas flow (g/s)")
     shield_gas_flow = models.FloatField(default=0,verbose_name="shield gas flow (g/s)")
-    nozzle_diameter = models.FloatField(default=1,verbose_name="nozzle diameter (cm)")
-    shield_gas = models.ForeignKey(Gas,null=True,on_delete=models.CASCADE, related_name = "Shield_gas")
-    plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.CASCADE, related_name = "Plasma_gas")
+    nozzle = models.ForeignKey(Nozzle,null=True,on_delete=models.SET_NULL, related_name = "Nozzle")
+    shield_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "Shield_gas")
+    plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "Plasma_gas")
 
     def __str__(self):
         return self.name
-
+    
+    class Meta:
+        ordering = ['name']
+        
 class ConditionInstance(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)
     condition = models.ForeignKey(Condition,on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    dwell_time = models.FloatField(default=200,verbose_name="dwell time (s)")
-    start_time = models.FloatField(verbose_name="start time (s)",null=True,blank=True)
-    end_time = models.FloatField(verbose_name="end time (s)",null=True,blank=True)
+    start_time = models.FloatField(verbose_name="start time (s)",null=True)
+    end_time = models.FloatField(verbose_name="end time (s)",null=True)
+    dwell_time = models.FloatField(default=60,verbose_name="dwell time (s)",null=True,blank=True)
 
     def __str__(self):
         return self.name

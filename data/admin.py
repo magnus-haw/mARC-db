@@ -6,6 +6,7 @@ from .models import Series,Record,Person
 from system.models import ConditionInstance,HeaterSettings,StingSettings
 from system.models import FileAttachments,GasSettings,DistilledWaterLoop
 from system.models import SensorWaterLoop,VacuumWaterLoop,VacuumSystem
+from system.models import PhotoAttachment,CameraSettings
 
 # Register your models here.
 
@@ -47,14 +48,22 @@ class ConditionInline(admin.StackedInline):
     model = ConditionInstance
     extra = 1
 
+class PhotoAttachmentInline(admin.TabularInline):
+    model = PhotoAttachment
+    
+class CameraInline(admin.StackedInline):
+    model = CameraSettings
+    extra = 2
+
 class RunAdmin(admin.ModelAdmin):
-    list_display = ('name','test','notes')
-    list_filter = ('test__date','test',)
+    list_display = ('name','test','date','notes')
+    list_filter = ('test__apparatus','date','test',)
     search_fields = ('name','test__name','notes')
     inlines = [
                HeaterSettingsInline,
                GasSettingsInline,
                ConditionInline,
+               CameraInline,
                StingSettingsInline,
                FileAttachmentsInline,
                DistilledWaterLoopInline,
