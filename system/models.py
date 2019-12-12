@@ -56,10 +56,31 @@ class Camera(models.Model):
         return self.name
 
 class Nozzle(models.Model):
-    name = models.CharField(max_length=200)
-    diameter = models.FloatField(verbose_name="Diameter (cm)",null=True)
+    name = models.CharField(max_length=100)
+    diameter = models.FloatField(verbose_name="Diameter (inch)",null=True)
     notes = models.TextField(blank=True,null=True)
 
+    def __str__(self):
+        return self.name
+
+class StingArm(models.Model):
+    name = models.CharField(max_length=15)
+    notes = models.TextField(null=True,blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class CalShape(models.Model):
+    name = models.CharField(max_length=15)
+    notes = models.TextField(null=True,blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class CalType(models.Model):
+    name = models.CharField(max_length=15)
+    notes = models.TextField(null=True,blank=True)
+   
     def __str__(self):
         return self.name
 

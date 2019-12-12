@@ -42,12 +42,12 @@ class Test(models.Model):
 class Run(models.Model):
     name = models.CharField(max_length=200)
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
-    date = models.DateTimeField(null=True)
-    test_engineer = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "test_engineer")
-    principle_investigator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL, related_name = "principle_investigator")
-    operator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "operator")
-    objective = models.TextField(null=True)
-    procedure = models.TextField(null=True)
+    date = models.DateTimeField(null=True,blank=True)
+    test_engineer = models.ForeignKey(Person, null=True, blank=True,on_delete=models.SET_NULL,related_name = "test_engineer")
+    principle_investigator = models.ForeignKey(Person, null=True, blank=True,on_delete=models.SET_NULL, related_name = "principle_investigator")
+    operator = models.ForeignKey(Person, null=True, blank=True,on_delete=models.SET_NULL,related_name = "operator")
+    objective = models.TextField(null=True,blank=True)
+    procedure = models.TextField(null=True,blank=True)
     notes = models.TextField(null=True,blank=True)
     
     class Meta:
