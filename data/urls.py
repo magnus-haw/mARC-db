@@ -4,13 +4,16 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('search/', views.SearchData, name='search'),
-    path('spreadsheets/', views.SpreadsheetListView.as_view(), name='spreadsheets'),
-    path('spreadsheet/<str:pk>', views.SpreadsheetDetailView.as_view(), name='spreadsheet-detail'),
-    path('diagnostics/', views.DiagnosticListView.as_view(), name='diagnostics'),
-    path('sheet/<int:pk>', views.ViewSheet, name='sheet-detail'),
-    path('sheet/<int:pk>/download_csv/', views.DownloadSheetCSV, name='sheet-detail-csv'),
-    path('search/download_csv/', views.DownloadSearchCSV, name='search-csv'),
-    path('diagnostic/<int:pk>', views.ViewDiagnostic, name='diagnostic-detail'),
+    path('apparatus/', views.ApparatusListView, name='apparatus'),
+    path('apparatus/<int:apparatus_pk>/', views.ApparatusDetailView, name='apparatus-detail'),
+    path('apparatus/<int:apparatus_pk>/upload_xlsx/', views.upload_xlsx, name='upload_xlsx'),
+    path('test/<int:test_pk>/', views.TestView, name='test'),
+    path('test/<int:test_pk>/upload_csv/', views.upload_csv, name='upload_csv'),
+    path('run/<int:run_pk>', views.ViewRun, name='run-detail'),
+    path('run/<int:run_pk>/download_csv/', views.DownloadRunCSV, name='run-detail-csv'),
+
+    path('search/', views.SearchView, name='search'),
+    path('search/<int:apparatus_pk>/', views.SearchData, name='search-app'),
+    path('search/<int:apparatus_pk>/download_csv/', views.DownloadSearchCSV, name='search-csv'),	
 ]
 

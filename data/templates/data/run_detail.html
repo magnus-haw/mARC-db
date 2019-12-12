@@ -1,0 +1,154 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ run.name }}</title>{% endblock %}
+
+{% block head %}
+  <!-- Bokeh plotting JS and CSS -->
+  <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+  <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.js"></script>
+  <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.css" rel="stylesheet" type="text/css">
+      
+  <script>
+      $(document).ready(function(){
+        $("a.toggle").click(function(){
+          $(this).parent().parent().parent().next().toggle(200);
+        });
+      });
+  </script>
+  
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <a href="{% url "admin:data_run_change" run.pk %}"><h1>Run: {{ run.name }}</h1></a>
+<div class="row">
+  <div class="col-sm-3">
+      <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' run.test.apparatus.pk %}">{{ run.test.apparatus.name }}</a></p>
+      <p><strong>Test:</strong> <a href="{% url 'test' run.test.pk %}">{{ run.test.name }}</a></p>
+      <p><strong>Date:</strong> {{ run.date }}</p>
+  </div>
+  <div class="col-sm-4">
+        <p><strong>PI:</strong> {{ run.principle_investigator.name }}</p>
+        <p><strong>Test Engineer:</strong> {{ run.test_engineer.name }}</p>
+        <p><strong>Operator:</strong> {{ run.operator.name }}</p>
+  </div>
+  <div class="col-sm-5">
+      <p><strong>Run objective:</strong> {{ run.objective }}</p>
+      <p><strong>Notes:</strong> {{ run.notes }}</p>
+    </div>
+</div>
+
+<hr>
+<!-- Diagnostics -->
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Diagnostics</h4></div>
+</div>
+<div class="row" style="display:none;">
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        {% for diag in diagnostics %}
+        <hr>
+        <p><strong>{{diag.name}}</strong></p>
+        {% endfor %}
+    </div>
+    
+    <div class="col-sm-6" style="margin-left:10px;margin-top:20px">
+        {{ div | safe }}
+        {{ script | safe }}
+    </div>
+</div>
+<!-- end diagnostics row-->
+
+<hr>
+
+<!-- Conditions -->
+{% if run.conditioninstance_set.all %}
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Conditions</h4></div>
+</div>
+<div class="row toggle" style="display:none;">
+    <table style="width:100%">
+    <tr>
+        <th>Name</th>
+        <th>Dwell Time (s)</th>
+        <th>Current (A)</th>
+        <th>Plasma gas (g/s)</th>
+        <th>Shield gas (g/s)</th>
+        <th>Nozzle (cm)</th>
+    </tr>
+    {% for cond in run.conditioninstance_set.all %}
+        <tr>
+            <td>{{cond.condition.name}}</td>
+            <td>{{cond.dwell_time}}</td>
+            <td>{{cond.condition.current}}</td>
+            <td>{{cond.condition.plasma_gas_flow}}</td>
+            <td>{{cond.condition.shield_gas_flow}}</td>
+            <td>{{cond.condition.nozzle_diameter}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+</div>
+<!-- end conditions-->
+<hr>
+{% endif %}
+
+
+<!-- Gases -->
+{% if run.gassettings %}
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Gases</h4></div>
+</div>
+<div class="row toggle" style="display:none;">
+    <table style="width:50%">
+        <tr>
+            <th>Main gas</th>
+            <th>Shield gas</th>
+            <th>Purge gas</th>
+        </tr>
+        <tr>
+            <td>{{run.gassettings.plasma_gas.name}}</td>
+            <td>{{run.gassettings.shield_gas.name}}</td>
+            <td>{{run.gassettings.purge_gas.name}}</td>
+        </tr>
+    </table>
+</div>
+<!-- end gases-->
+<hr>
+{% endif %}
+
+
+<!-- Files -->
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>File attachments</h4></div>
+</div>
+<div class="row toggle" style="display:none;">
+    <div class="col-sm-2"><a href="{% url 'run-detail-csv' run.pk %}">Diagnostic Spreadsheet</a></div>
+    {% if run.fileattachments.run_sheet %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.run_sheet.url}}">Run Sheet</a></div>
+    {%endif%}
+    {% if run.fileattachments.pretest_photo %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.pretest_photo.url}}">Pretest Photo</a></div>
+    {%endif%}
+    {% if run.fileattachments.posttest_photo %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.posttest_photo.url}}">Posttest Photo</a></div>
+    {%endif%}
+    {% if run.fileattachments.video %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.video.url}}">Video</a></div>
+    {%endif%}
+    {% if run.fileattachments.spectra %}
+    <div class="col-sm-2"><a href="{{run.fileattachments.spectra.url}}">Spectra</a></div>
+    {%endif%}
+</div>
+<!-- end files-->
+<hr>
+
+</div> <!-- end container-->
+{% endblock %}
+
+

@@ -1,11 +1,9 @@
 from django import forms
-from .models import Record,Sheet,Spreadsheet,Diagnostic
+from .models import Record,Series,Test,Diagnostic
 
 class SearchForm(forms.Form):
-    choices = Spreadsheet.objects.all().values_list('pk',flat=True)
-    
-    spreadsheets = forms.ModelMultipleChoiceField( 
-            queryset = Spreadsheet.objects.all(),
+    tests = forms.ModelMultipleChoiceField(
+            queryset = Test.objects.all(),
             required=False,
             )
     #sheets = forms.MultipleChoiceField(
@@ -17,3 +15,12 @@ class SearchForm(forms.Form):
             queryset = Diagnostic.objects.all(),
             required=False,
             )
+
+class UploadTestForm(forms.Form):
+    name = forms.CharField(max_length=50)
+    date = forms.DateField()
+    file = forms.FileField()
+
+class UploadRunForm(forms.Form):
+    name = forms.CharField(max_length=50)
+    file = forms.FileField()

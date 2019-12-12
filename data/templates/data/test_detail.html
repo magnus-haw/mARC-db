@@ -1,0 +1,24 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ test.name }}</title>{% endblock %}
+
+{% block content %}
+  <h1>Test: {{ test.name }}</h1>
+
+  <p><strong>Date:</strong> {{ test.date }}</p>
+  <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' test.apparatus.pk %}">{{ test.apparatus.name }}</a></p>
+  <p><strong>Notes:</strong> {{ test.notes }}</p>
+  <p><a href="{% url 'upload_csv' test.pk %}">Upload additional run (*.csv)</a></p>
+
+
+  <div style="margin-left:20px;margin-top:20px">
+    <h4>Runs</h4>
+
+    {% for run in test.run_set.all %}
+      <hr>
+      <p><strong><a href="{% url 'run-detail' run.pk %}">{{run.name}}</a></strong></p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+

@@ -1,0 +1,15 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Apparatus</h1>
+  <p>These are the current and past versions of the mARC apparatus at NASA Ames</p>
+  {% if apparatus %}
+  <ul>
+    {% for app in apparatus %}
+      <li><a href="{% url 'apparatus-detail' app.pk %}">{{ app.name }}</a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>There are no apparatus in the database.</p>
+  {% endif %}       
+{% endblock %}
