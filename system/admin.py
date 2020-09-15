@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import StingDevice,Gas,Condition,Nozzle
 from .models import Camera,Lens,OpticalFilter,CameraPosition
+from .models import StingArm,CalShape,CalType 
 
 # Register your models here.
 class GasAdmin(admin.ModelAdmin):
@@ -37,5 +38,9 @@ admin.site.register(Camera,CameraAdmin)
 admin.site.register(Lens,LensAdmin)
 admin.site.register(OpticalFilter,OpticalFilterAdmin)
 admin.site.register(CameraPosition,CameraPositionAdmin)
+
+admin.site.register(StingArm)
+admin.site.register(CalType)
+admin.site.register(CalShape)
 
 admin.site.register(Nozzle,NozzleAdmin)

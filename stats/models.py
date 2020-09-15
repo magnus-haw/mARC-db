@@ -1,6 +1,6 @@
 from django.db import models
 from data.models import Run,Test
-from data.stats import Nozzle, StingArm, CalType, CalShape
+from system.models import Nozzle, StingArm, CalType, CalShape
 
 # Create your models here.
 class ConditionAggregate(models.Model):
@@ -44,4 +44,9 @@ class IHFAggregate(models.Model):
     tstart = models.FloatField(verbose_name="Start time [s]",null=True,blank=True)
     tend = models.FloatField(verbose_name="End time [s]",null=True,blank=True)
     boxpressure = models.FloatField(verbose_name="Box pressure [kPa]",null=True,blank=True)
+    plenum = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["test"]
+        verbose_name = "IHF Aggregate"
+        verbose_name_plural = "IHF Aggregates"

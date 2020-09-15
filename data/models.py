@@ -28,8 +28,8 @@ class Apparatus(models.Model):
 
 class Test(models.Model):
     name = models.CharField(max_length=200,unique=True)
-    date = models.DateField()
-    notes = models.TextField(null=True)
+    date = models.DateField(null=True,blank=True)
+    notes = models.TextField(null=True,blank=True)
     apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
 
     def __str__(self):
