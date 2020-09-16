@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Run
+from data.models import Run,Apparatus
 
 # Create your models here.
 class Gas(models.Model):
@@ -17,9 +17,23 @@ class Gas(models.Model):
 class StingDevice(models.Model):
     name = models.CharField(max_length=200)
     sn = models.CharField(max_length=200)
-    size = models.CharField(max_length=200	)
+    size = models.CharField(max_length=200)
     limits = models.CharField(max_length=200)
     notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+class Cathode(models.Model):
+    name = models.CharField(max_length=200)
+    type = models.CharField(max_length=200)
+    apparatus = models.ForeignKey(Apparatus,on_delete=models.CASCADE)
+    dateInstalled = models.DateField(blank=True,null=True)
+    dateRemoved   = models.DateField(blank=True,null=True)
+    runtime = models.FloatField(verbose_name="Cathode time (s)",blank=True,null=True)
+    notes = models.TextField(null=True,blank=True)
+    pretest_photo = models.ImageField(null=True,blank=True)
+    posttest_photo= models.ImageField(null=True,blank=True)
 
     def __str__(self):
         return self.name
@@ -122,7 +136,7 @@ class GasSettings(models.Model):
 class HeaterSettings(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
     nozzle = models.ForeignKey(Nozzle,null=True,on_delete=models.SET_NULL)
-    total_cathode_time = models.FloatField(null=True,verbose_name="total cathode time (s)")
+    cathode = models.ForeignKey(Cathode, null=True, on_delete=models.SET_NULL)
     total_arc_on_duration = models.FloatField(null=True,verbose_name="total arc-on duration (s)")
     number_disks = models.PositiveSmallIntegerField(null=True,default=2)
     number_cathode_starts = models.PositiveIntegerField(null=True,default=1)

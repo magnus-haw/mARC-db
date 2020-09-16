@@ -318,10 +318,6 @@ def ViewRun(request,run_pk):
     diagnostics = run.get_diagnostics()
     
     ### Plotting section
-    xkeys = ['time','time','time','time','time','time','pitot_position','gardon_position']
-    ykeys = ['voltage','current','column_pressure','chamber_pressure',
-            'plasma_gas','shield_gas','pitot_pressure','gardon_heat_flux']
-
     figs=[]
     xkey = "Time [s]"
     time = df[xkey].values

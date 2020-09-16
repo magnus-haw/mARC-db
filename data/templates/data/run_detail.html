@@ -72,8 +72,8 @@
 <div class="row">
     <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Conditions</h4></div>
 </div>
-<div class="row toggle" style="display:none;">
-    <table style="width:100%">
+<div class="row toggle" style="display:block;">
+    <table style="width:90%">
     <tr>
         <th>Name</th>
         <th>Dwell Time (s)</th>
@@ -84,12 +84,12 @@
     </tr>
     {% for cond in run.conditioninstance_set.all %}
         <tr>
-            <td>{{cond.condition.name}}</td>
+            <td><a href="{% url 'condition-detail' cond.condition.pk %}">{{cond.condition.name}}</a></td>
             <td>{{cond.dwell_time}}</td>
             <td>{{cond.condition.current}}</td>
             <td>{{cond.condition.plasma_gas_flow}}</td>
             <td>{{cond.condition.shield_gas_flow}}</td>
-            <td>{{cond.condition.nozzle_diameter}}</td>
+            <td>{{cond.condition.nozzle.diameter}}</td>
         </tr>
     {% endfor %}
     </table>
@@ -104,7 +104,7 @@
 <div class="row">
     <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Gases</h4></div>
 </div>
-<div class="row toggle" style="display:none;">
+<div class="row toggle" style="display:block;">
     <table style="width:50%">
         <tr>
             <th>Main gas</th>
@@ -127,7 +127,7 @@
 <div class="row">
     <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>File attachments</h4></div>
 </div>
-<div class="row toggle" style="display:none;">
+<div class="row toggle" style="display:block;">
     <div class="col-sm-2"><a href="{% url 'run-detail-csv' run.pk %}">Diagnostic Spreadsheet</a></div>
     {% if run.fileattachments.run_sheet %}
     <div class="col-sm-2"><a href="{{run.fileattachments.run_sheet.url}}">Run Sheet</a></div>

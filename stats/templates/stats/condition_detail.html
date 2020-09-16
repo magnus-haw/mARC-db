@@ -1,0 +1,129 @@
+{% extends "base_generic.html" %}
+
+{% block title %}<title>{{ run.name }}</title>{% endblock %}
+
+{% block head %}
+  <!-- Bokeh plotting JS and CSS -->
+  <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+  <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.js"></script>
+  <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-x.y.z.min.css" rel="stylesheet" type="text/css">
+      
+  <script>
+      $(document).ready(function(){
+        $("a.toggle").click(function(){
+          $(this).parent().parent().parent().next().toggle(200);
+        });
+      });
+  </script>
+  
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1>Condition: {{ condition.name }}</h1>
+<hr>
+<!-- Diagnostics 
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Diagnostics</h4></div>
+</div>
+<div class="row" style="display:none;">
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        {% for diag in diagnostics %}
+        <hr>
+        <p><strong>{{diag.name}}</strong></p>
+        {% endfor %}
+    </div>
+    
+    <div class="col-sm-6" style="margin-left:10px;margin-top:20px">
+        {{ div | safe }}
+        {{ script | safe }}
+    </div>
+</div>
+     end diagnostics row-->
+
+
+<!-- Runs -->
+{% if condition.conditioninstance_set.all %}
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Runs</h4></div>
+</div>
+<div class="row toggle" style="display:none;">
+    <table style="width:90%">
+    <tr>
+        <th>Name</th>
+        <th>Dwell Time (s)</th>
+        <th>Current Setpoint (A)</th>
+        <th>Plasma gas setpoint (g/s)</th>
+        <th>Shield gas setpoint (g/s)</th>
+        <th>Nozzle (cm)</th>
+    </tr>
+    {% for cond in condition.conditioninstance_set.all %}
+        <tr>
+            <td><a href="{% url 'run-detail' cond.run.pk %}">{{cond.run.name}}</a></td>
+            <td>{{cond.dwell_time}}</td>
+            <td>{{cond.condition.current}}</td>
+            <td>{{cond.condition.plasma_gas_flow}}</td>
+            <td>{{cond.condition.shield_gas_flow}}</td>
+            <td>{{cond.condition.nozzle.diameter}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Stats</h4></div>
+</div>
+<div class="row" style="display:block;">
+    <table style="width:90%">
+    
+    {% for agg in aggs %}
+        
+            {% ifchanged agg.diagnostic.name %}
+            <tr>
+                <th>Run</th>
+                <th>Diagnostic</th>
+                <th>Average</th>
+                <th>Std</th>
+                <th>Min</th>
+                <th>Max</th>
+            </tr>
+            <tr>
+            <td><a href="{% url 'run-detail' agg.instance.run.pk %}">{{agg.instance.run.name}}</a></td>
+            <td>{{agg.diagnostic.name}}</td>
+            <td>{{agg.avg|floatformat:"-3"}}</td>
+            <td>{{agg.stdev|floatformat:"-3"}}</td>
+            <td>{{agg.min|floatformat:"-3"}}</td>
+            <td>{{agg.max|floatformat:"-3"}}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td><a href="{% url 'run-detail' agg.instance.run.pk %}">{{agg.instance.run.name}}</a></td>
+                <td>{{agg.diagnostic.name}}</td>
+                <td>{{agg.avg|floatformat:"-3"}}</td>
+                <td>{{agg.stdev|floatformat:"-3"}}</td>
+                <td>{{agg.min|floatformat:"-3"}}</td>
+                <td>{{agg.max|floatformat:"-3"}}</td>
+            </tr>
+            {% endifchanged %}
+    {% endfor %}
+    </table>
+</div>
+<!-- end conditions-->
+<hr>
+{% endif %}
+
+
+
+</div> <!-- end container-->
+{% endblock %}
+
+

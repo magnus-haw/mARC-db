@@ -23,6 +23,7 @@ admin.site.site_header = "mARC Database Admin v1.0"
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('data/', include('data.urls')),
+    path('stats/', include('stats.urls')),
     path('', RedirectView.as_view(url='/data/', permanent=True)),
 ]
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import StingDevice,Gas,Condition,Nozzle
+from .models import StingDevice,Gas,Condition,Nozzle,Cathode
 from .models import Camera,Lens,OpticalFilter,CameraPosition
 
 # Register your models here.
@@ -10,6 +10,10 @@ class GasAdmin(admin.ModelAdmin):
 class StingDeviceAdmin(admin.ModelAdmin):
     list_display = ('name','sn','size','limits','notes')
     search_fields = ('name','sn','size','limits','notes')
+
+class CathodeAdmin(admin.ModelAdmin):
+    list_display  = ('name','type','apparatus','dateInstalled','dateRemoved','runtime','notes')
+    search_fields = ('name','type','apparatus','dateInstalled','dateRemoved','runtime','notes')
 
 class ConditionAdmin(admin.ModelAdmin):
     list_display = ('name','current','plasma_gas_flow','shield_gas_flow')
@@ -31,6 +35,7 @@ class NozzleAdmin(admin.ModelAdmin):
 
 admin.site.register(Condition,ConditionAdmin)
 admin.site.register(Gas,GasAdmin)
+admin.site.register(Cathode,CathodeAdmin)
 admin.site.register(StingDevice,StingDeviceAdmin)
 
 admin.site.register(Camera,CameraAdmin)

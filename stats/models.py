@@ -1,11 +1,12 @@
 from django.db import models
+from data.models import Run,Diagnostic
+from system.models import Condition, ConditionInstance
 
 # Create your models here.
 class ConditionAggregate(models.Model):
-    name = models.CharField(max_length=200)
-    run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    value = models.FloatField(null=True,blank=True)
-    notes = models.TextField(null=True)
-
-    def __str__(self):
-        return self.name
+    instance = models.ForeignKey(ConditionInstance, on_delete=models.CASCADE)
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    avg = models.FloatField(null=True,blank=True)
+    stdev = models.FloatField(null=True,blank=True)
+    min   = models.FloatField(null=True,blank=True)
+    max   = models.FloatField(null=True,blank=True)
