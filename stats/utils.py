@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import optimize, ndimage
+from scipy import optimize, integrate
+from numpy import gradient as grad
 
 def recursive_fit_piecewise(x,y, err_thresh, level=0):
     """ Recursive top-down algorithm for piece-wise linear 
@@ -16,24 +18,29 @@ def recursive_fit_piecewise(x,y, err_thresh, level=0):
         elbow points: list of (x,y) points
     """
     p, cov, left_rms, right_rms = fit_piecewise(x,y)
-    print(p[0], left_rms, right_rms)
+    #print(p[0], left_rms, right_rms)
     lpoints, rpoints = [], []
     if left_rms > err_thresh:        
         lx, ly = x[x<=p[0]], y[x<=p[0]]
-        # print("left", lx[0], lx[-1])
-        lpoints = recursive_fit_piecewise(lx,ly, err_thresh, level=level+1)
+        if len(lx) > 10:
+            lpoints = recursive_fit_piecewise(lx,ly, err_thresh, level=level+1)
     if right_rms > err_thresh:
         rx, ry = x[x>=p[0]], y[x>=p[0]]
-        # print("right", rx[0], rx[-1])
-        rpoints = recursive_fit_piecewise(rx,ry, err_thresh, level=level+1)
+        if len(rx) > 10:
+            rpoints = recursive_fit_piecewise(rx,ry, err_thresh, level=level+1)
     
     if level ==0:
         lpoints = [(x[0],y[0])]+lpoints
         rpoints = rpoints + [(x[-1],y[-1])]
     if left_rms < err_thresh or right_rms < err_thresh:
-        return lpoints + [(p[0],p[1])] + rpoints
+        ret = lpoints + [(p[0],p[1])] + rpoints
     else:
-        return lpoints + rpoints
+        ret = lpoints + rpoints
+
+    if level == 0:
+        ret = np.array(ret)
+    
+    return ret
 
 def piecewise_linear(x, x0, y0, k1, k2):
     x = np.array(x, dtype=np.float)
@@ -53,9 +60,10 @@ def fit_piecewise(x,y):
         left_rms: left curve rms
         right_rms: right curve rms
     """
+    ymax= max(y.min()+1,y.max())
     p, cov = optimize.curve_fit(piecewise_linear, x, y, p0=(np.mean(x),np.mean(y),0.,0.), 
                                 bounds=([x.min(),y.min(),-np.inf, -np.inf],
-                                        [x.max(),y.max(), np.inf, np.inf]))
+                                        [x.max(),ymax, np.inf, np.inf]))
     left_rms = np.sqrt( np.mean((piecewise_linear(x[x<=p[0]],*p) - y[x<=p[0]])**2) )
     right_rms = np.sqrt( np.mean((piecewise_linear(x[x>p[0]],*p) - y[x>p[0]])**2) )
     return p, cov, left_rms, right_rms
@@ -146,33 +154,72 @@ def getOutlierMask(metric,threshold=2,method="stdev"):
         print("Input array len must be > 25")
     return mask
 
+def integral_estimator(x,y, low_thresh=0.1, upper_thresh=0.9):
+    pass
+
+
+# if __name__ == "__main__":
+#     x = np.arange(0,51.)
+#     y = np.arange(0,51.)
+
+#     y[x>10] *= .1
+#     y[x>10] -= y[11]-y[10]
+
+#     y[x>35] /= .1
+#     y[x>35] -= y[36]-y[35]
+#     y_noise = 1 * np.random.normal(size=y.size)
+#     y += y_noise
+#     #y = smooth(y)
+#     y[25] +=7
+#     y[26] +=7
+#     y[40] +=4
+#     mask = getOutlierMask(y)
+#     y = y[mask==0]
+#     x = x[mask==0]
+#     # y = np.cumsum(y)
+
+#     pts = recursive_fit_piecewise(x,y,1.5)
+#     # p, cov, Lrms, Rrms = fit_piecewise(x,y)
+#     # print(p, cov)
+#     # print(Lrms, Rrms)
+
+#     plt.plot(x,y, 'ro')
+#     plt.plot(pts[:,0], pts[:,1])
+#     # plt.plot(x,piecewise_linear(x,*p),'bo')
+#     plt.show()
+
 if __name__ == "__main__":
-    x = np.arange(0,51.)
-    y = np.arange(0,51.)
+    # load in current data
+    fname = "/home/magnus/Desktop/mARC-db/stats/current.csv"
+    df = pd.read_csv(fname)
 
-    y[x>10] *= .1
-    y[x>10] -= y[11]-y[10]
+    data = df.to_numpy()
+    cols = df.columns
 
-    y[x>35] /= .1
-    y[x>35] -= y[36]-y[35]
-    y_noise = 1 * np.random.normal(size=y.size)
-    y += y_noise
-    #y = smooth(y)
-    y[25] +=7
-    y[26] +=7
-    y[40] +=4
-    mask = getOutlierMask(y)
-    y = y[mask==0]
-    x = x[mask==0]
-    # y = np.cumsum(y)
+    for i in range(2,len(cols),2):
+        x,y = data[:,i], data[:,i+1]
+        inds = ~np.isnan(y)
+        x = x[inds]
+        y = y[inds]
+        mask = getOutlierMask(y)
+        y = y[mask==0]
+        x = x[mask==0]
+        #y= smooth(y)
 
-    points = recursive_fit_piecewise(x,y,1.5)
-    pts = np.array(points)
-    # p, cov, Lrms, Rrms = fit_piecewise(x,y)
-    # print(p, cov)
-    # print(Lrms, Rrms)
+        if len(x) > 50:
 
-    plt.plot(x,y, 'ro')
-    plt.plot(pts[:,0], pts[:,1])
-    # plt.plot(x,piecewise_linear(x,*p),'bo')
-    plt.show()
+            fig = plt.figure()
+            plt.subplot(311)
+            plt.plot(x,y)
+            pts = recursive_fit_piecewise(x,y,4)
+            plt.plot(pts[:,0], pts[:,1],'go-')
+
+            plt.subplot(312)
+            plt.plot(x,grad(y))
+
+            plt.subplot(313)
+            y_int = integrate.cumtrapz(y, x, initial=0)
+            plt.plot(x,y_int)
+            pts = recursive_fit_piecewise(x,y_int,7.5)
+            plt.plot(pts[:,0], pts[:,1],'go-')
+            plt.show()
