@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import optimize, integrate
 from numpy import gradient as grad
 
-def recursive_fit_piecewise(x,y, err_thresh, level=0):
+def recursive_fit_piecewise(x,y, err_thresh, level=0, slope=10.):
     """ Recursive top-down algorithm for piece-wise linear 
         fitting. Consecutive splits of domain based on error
         threshold.
@@ -38,6 +38,7 @@ def recursive_fit_piecewise(x,y, err_thresh, level=0):
         ret = lpoints + rpoints
 
     if level == 0:
+        ret = merge_similar_segments(ret, slope=slope)
         ret = np.array(ret)
     
     return ret
@@ -46,6 +47,17 @@ def piecewise_linear(x, x0, y0, k1, k2):
     x = np.array(x, dtype=np.float)
     return np.piecewise(x, [x <= x0, x>x0], 
                         [lambda x:k1*x + y0-k1*x0, lambda x:k2*x + y0-k2*x0])
+
+def linear(x, x0, y0, k1):
+    return lambda x:k1*x + y0-k1*x0
+
+def fit_linear(x,y):
+    ymax= max(y.min()+1,y.max())
+    p, cov = optimize.curve_fit(linear, x, y, p0=(np.mean(x),np.mean(y),0.), 
+                                bounds=([x.min(),y.min(),-np.inf],
+                                        [x.max(),ymax, np.inf]))
+    rms = np.sqrt( np.mean((linear(x,*p) - y)**2) )
+    return p, cov, rms
 
 def fit_piecewise(x,y):
     """Fits 2-piece linear function to data
@@ -126,6 +138,47 @@ def smooth(x,window_len=11,window='hanning'):
     assert len(ret) == len(x)
     return ret
 
+def merge_similar_segments(pts, slope=10.):
+    ### Merge adjacent segements with similar slopes
+    clean_pts = [pts[0]]
+    for i in range(1,len(pts)-1):
+        dx1,dx2 = pts[i][0] - pts[i-1][0], pts[i+1][0] - pts[i][0]
+        dy1,dy2 = pts[i][1] - pts[i-1][1], pts[i+1][1] - pts[i][1]
+        
+        m1, m2 = dy1/dx1, dy2/dx2
+        
+        if abs(m1-m2)>slope:
+            clean_pts.append(pts[i])
+    clean_pts.append(pts[-1])
+    return clean_pts
+
+def remove_small_segments(clean_pts):
+    ### Eliminate small segments between larger segments
+    if len(clean_pts) >= 5:
+        extra_clean = [clean_pts[0]]
+        pts = np.array(clean_pts)
+        dp = np.diff(pts,axis=0)
+        xnorm = pts[:,0].max() - pts[:,0].min()
+        ynorm = pts[:,1].max() - pts[:,1].min()
+        dp[:,0] /= xnorm
+        dp[:,1] /= ynorm
+        
+        for i in range(1,len(clean_pts)-2,1):
+            dl1 = np.linalg.norm(dp[i-1])
+            dl2 = np.linalg.norm(dp[i])
+            dl3 = np.linalg.norm(dp[i+1])
+
+            if dl1/dl2 > 5 and dl3/dl2 > 5:
+                extra_clean.append(clean_pts[i+1])
+                extra_clean.append(clean_pts[i+2])
+            else:
+                extra_clean.append(clean_pts[i])
+                extra_clean.append(clean_pts[i+1])
+                extra_clean.append(clean_pts[i+2])
+        return np.array(extra_clean)
+    else:
+        return np.array(clean_pts)
+    
 def getOutlierMask(metric,threshold=2,method="stdev"):
     """Returns mask for outliers in time series
 
@@ -154,10 +207,22 @@ def getOutlierMask(metric,threshold=2,method="stdev"):
         print("Input array len must be > 25")
     return mask
 
-def integral_estimator(x,y, low_thresh=0.1, upper_thresh=0.9):
-    pass
-
-
+def clean_series(x,y):
+    inds = ~np.isnan(y)
+    xn = x[inds]
+    yn = y[inds]
+    mask = getOutlierMask(yn)
+    ynn = yn[mask==0]
+    xnn = xn[mask==0]
+    return xnn.copy(),ynn.copy()
+    
+def integral_estimator(xi,yi, thresh=7.5):
+    x,y = clean_series(xi,yi)
+    y_int = integrate.cumtrapz(y, x, initial=0)
+    pts = recursive_fit_piecewise(x,y_int,thresh)
+    pts = remove_small_segments(pts)
+    return np.array(pts)
+    
 # if __name__ == "__main__":
 #     x = np.arange(0,51.)
 #     y = np.arange(0,51.)
@@ -196,23 +261,14 @@ if __name__ == "__main__":
     data = df.to_numpy()
     cols = df.columns
 
-    for i in range(2,len(cols),2):
+    for i in range(0,len(cols),2):
         x,y = data[:,i], data[:,i+1]
-        inds = ~np.isnan(y)
-        x = x[inds]
-        y = y[inds]
-        mask = getOutlierMask(y)
-        y = y[mask==0]
-        x = x[mask==0]
-        #y= smooth(y)
-
+        
         if len(x) > 50:
 
             fig = plt.figure()
             plt.subplot(311)
             plt.plot(x,y)
-            pts = recursive_fit_piecewise(x,y,4)
-            plt.plot(pts[:,0], pts[:,1],'go-')
 
             plt.subplot(312)
             plt.plot(x,grad(y))
@@ -220,6 +276,6 @@ if __name__ == "__main__":
             plt.subplot(313)
             y_int = integrate.cumtrapz(y, x, initial=0)
             plt.plot(x,y_int)
-            pts = recursive_fit_piecewise(x,y_int,7.5)
+            pts = integral_estimator(x,y, thresh=7.5)
             plt.plot(pts[:,0], pts[:,1],'go-')
             plt.show()
