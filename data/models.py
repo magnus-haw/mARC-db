@@ -1,6 +1,6 @@
 from django.db import models
 import pandas as pd
-from numpy import array,shape
+from numpy import array, shape, array2string, fromstring, ndarray
 # Create your models here.
 
 class Person(models.Model):
@@ -98,10 +98,44 @@ class AlternateDiagnosticName(models.Model):
     name = models.CharField(max_length=50)
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
 
+class MyArrayField(models.TextField):
+    description = "A numpy array field serialized to txt"
+
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        elif isinstance(value, ndarray):
+            return value
+        else:
+            return fromstring(value, sep=' ')
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        else:
+            strrep = array2string(value)
+            return strrep[1:-1]
+
+class TimeSeries(models.Model):
+    time = MyArrayField()
+
+class DiagnosticSeries(models.Model):
+    time = models.ForeignKey(TimeSeries, on_delete=models.CASCADE)
+    values = MyArrayField()
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    name = models.CharField(max_length=150)
+
+    def __str__(self):
+        return self.name
+
 class Series(models.Model):
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
     run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=150)
     
     def __str__(self):
         return self.name
