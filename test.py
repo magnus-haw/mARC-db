@@ -8,5 +8,8 @@ from data.models import *
 
 import numpy as np
 
-t = np.arange(0,5,.1)
-ts = TimeSeries.objects.all()[0]
+dgs = DiagnosticSeries.objects.all()
+for dg in dgs:
+    r = dg.run
+    if len(dg.time.time) != len(dg.values):
+        print(r.name, dg.name)

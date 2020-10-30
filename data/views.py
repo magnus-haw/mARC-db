@@ -1,4 +1,4 @@
-from data.models import Diagnostic,Test,Run,Record,Apparatus,Series
+from data.models import Diagnostic,Test,Run,Record,Apparatus,Series,DiagnosticSeries
 from data.forms import SearchForm,UploadTestForm,UploadRunForm
 
 from django.shortcuts import render,render_to_response,get_object_or_404
@@ -219,6 +219,73 @@ def SearchView(request):
             }
     return render(request, 'search-base.html', context=context)
 
+# def SearchData(request,apparatus_pk):
+#     if request.method == 'POST':
+
+#         # Create a form instance and populate it with data from the request (binding):
+#         form = SearchForm(request.POST)
+
+#         # Check if the form is valid:
+#         if form.is_valid():
+#             tests = form.cleaned_data['tests']
+#             diags =  form.cleaned_data['diagnostics']
+#             tname = 'Time [s]'
+
+#             dflist,serieslist = [],[]
+#             for test in tests:
+#                 runs = test.run_set.all()
+#                 for r in runs:
+#                     series = r.series_set.filter(diagnostic__in=diags)
+#                     df = pd.DataFrame()
+#                     df.test = test.name
+#                     df.run = r.name
+#                     slist =[]
+#                     for s in series:
+#                         df[s.diagnostic.name] = s.record_set.all().order_by('index').values_list('value',flat=True)
+#                         slist.append(s.pk)
+#                     if len(series)>0:
+#                         ts = r.series_set.get(diagnostic__name = tname)
+#                         df[tname] = ts.record_set.all().order_by('index').values_list('value',flat=True)
+#                         serieslist += [ts.pk]+ slist
+#                         dflist.append(df)
+#             print(df.columns)
+            
+#             mycolor_ind =0
+#             myfigs = []
+#             for d in diags.exclude(name=tname):
+#                 fig = figure(x_axis_label= tname,y_axis_label=d.name,
+#                         plot_width =1000,plot_height =600)
+#                 for df in dflist:
+#                     if d.name in df.columns:
+#                         fig.line(df[tname], df[d.name],line_width = 1, legend_label= df.run+'_'+df.test, line_color=mycolors[mycolor_ind])
+#                         mycolor_ind = (mycolor_ind+1)%len(mycolors)
+#                 fig.legend.click_policy="hide"
+#                 myfigs.append(fig)
+#             bigplot = column(*myfigs)
+#             try:
+#                 script, div = components(bigplot)
+#             except:
+#                 print('Plotting error')
+#                 script,div = '','' 
+#             context = {'form': form,'serieslist':serieslist,'apparatus_pk':apparatus_pk,
+#                        'tests':tests,'diagnostics':diags,'script':script,'div':div}
+            
+#             # render results:
+#             return render(request, 'search_results.html', context)
+    
+#     else:
+#         form = SearchForm()
+#         form.fields["tests"].queryset = Test.objects.filter(apparatus__pk=apparatus_pk)
+#         form.fields['tests'].widget.attrs['size']='15'
+#         form.fields["diagnostics"].queryset = Diagnostic.objects.filter(apparatus__pk=apparatus_pk).exclude(name="Time [s]")
+#         form.fields['diagnostics'].widget.attrs['size']='15'
+
+#     context = {
+#         'form': form,
+#     }
+
+#     return render(request, 'search.html', context)
+
 def SearchData(request,apparatus_pk):
     if request.method == 'POST':
 
@@ -230,36 +297,22 @@ def SearchData(request,apparatus_pk):
             tests = form.cleaned_data['tests']
             diags =  form.cleaned_data['diagnostics']
             tname = 'Time [s]'
-            #time_diag = Diagnostic.objects.filter(name=tname)
-            diags = diags 
 
-            dflist,serieslist = [],[]
-            for test in tests:
-                runs = test.run_set.all()
-                for r in runs:
-                    series = r.series_set.filter(diagnostic__in=diags)
-                    df = pd.DataFrame()
-                    df.test = test.name
-                    df.run = r.name
-                    slist =[]
-                    for s in series:
-                        df[s.diagnostic.name] = s.record_set.all().order_by('index').values_list('value',flat=True)
-                        slist.append(s.pk)
-                    if len(series)>0:
-                        ts = r.series_set.get(diagnostic__name = tname)
-                        df[tname] = ts.record_set.all().order_by('index').values_list('value',flat=True)
-                        serieslist += [ts.pk]+ slist
-                        dflist.append(df)
-            print(df.columns)
-            
+            runs = Run.objects.filter(test__in=tests)                       
             mycolor_ind =0
             myfigs = []
-            for d in diags.exclude(name=tname):
+            for d in diags:
+                dgs = DiagnosticSeries.objects.filter(diagnostic=d,run__in=runs)
                 fig = figure(x_axis_label= tname,y_axis_label=d.name,
                         plot_width =1000,plot_height =600)
-                for df in dflist:
-                    if d.name in df.columns:
-                        fig.line(df[tname], df[d.name],line_width = 1, legend= df.run+'_'+df.test, line_color=mycolors[mycolor_ind])
+                if len(dgs)>0:
+                    for dg in dgs:
+                        n = int(len(dg.values)/5000.)
+                        if n < 1:
+                            t,y = dg.time.time, dg.values
+                        else:
+                            t,y = dg.time.time[::n], dg.values[::n]
+                        fig.line(t, y, line_width = 1, legend_label= dg.run.name+'_'+dg.run.test.name, line_color=mycolors[mycolor_ind])
                         mycolor_ind = (mycolor_ind+1)%len(mycolors)
                 fig.legend.click_policy="hide"
                 myfigs.append(fig)
@@ -269,8 +322,8 @@ def SearchData(request,apparatus_pk):
             except:
                 print('Plotting error')
                 script,div = '','' 
-            context = {'form': form,'serieslist':serieslist,'apparatus_pk':apparatus_pk,
-                       'tests':tests,'diagnostics':diags,'script':script,'div':div}
+            context = {'form': form,'serieslist':dgs.values_list('pk',flat=True),'apparatus_pk':apparatus_pk,
+                       'tests':tests,'runs':runs,'diagnostics':diags,'script':script,'div':div}
             
             # render results:
             return render(request, 'search_results.html', context)
@@ -290,13 +343,15 @@ def SearchData(request,apparatus_pk):
 
 def DownloadSearchCSV(request,apparatus_pk):
     list_pks = request.GET.getlist('series')
-    series = Series.objects.filter(pk__in=list_pks)
+    series = DiagnosticSeries.objects.filter(pk__in=list_pks)
 
     dflist =[]
     for s in series:
         df = pd.DataFrame()
+        label = 'Time [s]_'+s.diagnostic.name+'_'+ s.run.name + '_' + s.run.test.name
+        df[label] = s.time.time
         label = s.diagnostic.name +'_'+ s.run.name + '_' + s.run.test.name
-        df[label] = s.record_set.all().order_by('index').values_list('value',flat=True)
+        df[label] = s.values
         dflist.append(df)
     df_all = pd.concat(dflist,axis=1)
     
@@ -312,28 +367,57 @@ def DownloadSearchCSV(request,apparatus_pk):
     return response
 
 
+# def ViewRun(request,run_pk):
+#     run = get_object_or_404(Run, pk=run_pk)
+#     df = run.get_dataframe()
+#     diagnostics = run.get_diagnostics()
+    
+#     ### Plotting section
+#     xkeys = ['time','time','time','time','time','time','pitot_position','gardon_position']
+#     ykeys = ['voltage','current','column_pressure','chamber_pressure',
+#             'plasma_gas','shield_gas','pitot_pressure','gardon_heat_flux']
+
+#     figs=[]
+#     xkey = "Time [s]"
+#     time = df[xkey].values
+#     cnames = df.columns
+#     for i in range(0,len(cnames)):
+#         if cnames[i] != xkey:
+#             p1 = figure(x_axis_label=xkey, y_axis_label=cnames[i],
+#                 plot_width =1000,plot_height =300)
+#             p1.line(df[xkey], df[cnames[i]], legend= cnames[i], 
+#                 line_width = 2, line_color=mycolors[i])
+#             p1.legend.click_policy="hide"
+#             figs.append(p1)
+
+#     #Store components 
+#     bigplot = column(*figs)
+#     script, div = components(bigplot)
+#     #except:
+#     #    print('Run plotting error')
+#     #    script,div = '',''
+#     return render(request, 'data/run_detail.html', {'run':run,'data':df,'script':script,'div':div,'diagnostics':diagnostics,})
+
 def ViewRun(request,run_pk):
     run = get_object_or_404(Run, pk=run_pk)
-    df = run.get_dataframe()
+    dgs = DiagnosticSeries.objects.filter(run=run)
     diagnostics = run.get_diagnostics()
     
     ### Plotting section
-    xkeys = ['time','time','time','time','time','time','pitot_position','gardon_position']
-    ykeys = ['voltage','current','column_pressure','chamber_pressure',
-            'plasma_gas','shield_gas','pitot_pressure','gardon_heat_flux']
-
     figs=[]
     xkey = "Time [s]"
-    time = df[xkey].values
-    cnames = df.columns
-    for i in range(0,len(cnames)):
-        if cnames[i] != xkey:
-            p1 = figure(x_axis_label=xkey, y_axis_label=cnames[i],
-                plot_width =1000,plot_height =300)
-            p1.line(df[xkey], df[cnames[i]], legend= cnames[i], 
-                line_width = 2, line_color=mycolors[i])
-            p1.legend.click_policy="hide"
-            figs.append(p1)
+    for i in range(0,len(dgs)):
+        dg = dgs[i]
+        n = int(len(dg.values)/5000.)
+        if n < 1:
+            t,y = dg.time.time, dg.values
+        else:
+            t,y = dg.time.time[::n], dg.values[::n]
+        p1 = figure(x_axis_label=xkey, y_axis_label=dg.name,
+            plot_width =850,plot_height =300)
+        p1.line(t,y, legend_label= dg.diagnostic.name, 
+            line_width = 2, line_color=mycolors[i])
+        figs.append(p1)
 
     #Store components 
     bigplot = column(*figs)
@@ -341,7 +425,5 @@ def ViewRun(request,run_pk):
     #except:
     #    print('Run plotting error')
     #    script,div = '',''
-    return render(request, 'data/run_detail.html', {'run':run,'data':df,'script':script,'div':div,'diagnostics':diagnostics,})
-
-
+    return render(request, 'data/run_detail.html', {'run':run,'script':script,'div':div,'diagnostics':diagnostics,})
 mycolors = ['green','red','blue','cyan','orange','black','magenta','purple','olive','lime','yellow','gold','darkred','salmon','deeppink','coral','turquoise','teal','darkkhaki','khaki','navy','steelblue']

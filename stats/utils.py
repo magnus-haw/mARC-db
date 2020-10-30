@@ -191,6 +191,7 @@ def integral_estimator(x,y, low_thresh=0.1, upper_thresh=0.9):
 if __name__ == "__main__":
     # load in current data
     fname = "/home/magnus/Desktop/mARC-db/stats/current.csv"
+    fname = "/Users/mhaw/Desktop/mARC-db/stats/current.csv"
     df = pd.read_csv(fname)
 
     data = df.to_numpy()

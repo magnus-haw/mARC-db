@@ -1,6 +1,6 @@
 from django.db import models
 import pandas as pd
-from numpy import array, shape, array2string, fromstring, ndarray
+import numpy as np
 # Create your models here.
 
 class Person(models.Model):
@@ -57,17 +57,40 @@ class Run(models.Model):
     def __str__(self):
         return self.name
 
+    # def get_dataframe(self):
+    #     series = Series.objects.filter(run=self)
+    #     col_data, col_names = [],[]
+    #     for s in series:
+    #         col_names.append(s.diagnostic.name)
+    #         col_data.append( s.record_set.order_by('index').values_list('value',flat=True) )
+    #     d = np.array( col_data ).T
+    #     return pd.DataFrame(d,columns=col_names)
+
     def get_dataframe(self):
-        series = Series.objects.filter(run=self)
+        series = DiagnosticSeries.objects.filter(run=self)
         col_data, col_names = [],[]
-        for s in series:
-            col_names.append(s.diagnostic.name)
-            col_data.append( s.record_set.order_by('index').values_list('value',flat=True) )
-        d = array( col_data ).T
+        timelabel = "Time [s]"
+
+        ### Check if more than one time series
+        q_ts = TimeSeries.objects.filter(diagnosticseries__run =self).distinct()
+        if len(q_ts)==1:
+            col_names.append(timelabel)
+            col_data.append(q_ts[0].time)
+            for s in series:
+                col_names.append(s.diagnostic.name)
+                col_data.append( s.values )
+        else:
+            for s in series:
+                col_names.append(timelabel)
+                col_data.append( s.time.time )
+                col_names.append(s.diagnostic.name)
+                col_data.append( s.values )
+        d = np.array( col_data ).T
+        
         return pd.DataFrame(d,columns=col_names)
         
     def get_diagnostics(self):
-        dg_list = Series.objects.filter(run=self).values_list('diagnostic__name',flat=True)
+        dg_list = DiagnosticSeries.objects.filter(run=self).values_list('diagnostic__name',flat=True)
         diagnostics = Diagnostic.objects.filter(name__in=dg_list,apparatus=self.test.apparatus)
         return diagnostics
 
@@ -107,16 +130,16 @@ class MyArrayField(models.TextField):
     def to_python(self, value):
         if value is None:
             return None
-        elif isinstance(value, ndarray):
+        elif isinstance(value, np.ndarray):
             return value
         else:
-            return fromstring(value, sep=' ')
+            return np.fromstring(value, sep=' ')
 
     def get_prep_value(self, value):
         if value is None:
             return None
         else:
-            strrep = array2string(value)
+            strrep = np.array2string(value,threshold=np.inf,max_line_width=np.inf)
             return strrep[1:-1]
 
 class TimeSeries(models.Model):
