@@ -26,28 +26,229 @@
 
 {% block content %}
 <div class="container-fluid">
-    <a href="{% url "admin:data_run_change" run.pk %}"><h1>Run: {{ run.name }}</h1></a>
+<div class="row">
+  <div class="col-sm-12">
+    <span class="align-middle"><h1>Run: {{ run.name }}</h1></span>
+    <span class="align-middle"><a href="{% url 'admin:data_run_change' run.pk %}">Edit</a></span>
+
+    <hr>
+  </div>
+  
+  <div class="col-sm-1"> 
+      </div>
+</div>
 <div class="row">
   <div class="col-sm-3">
       <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' run.test.apparatus.pk %}">{{ run.test.apparatus.name }}</a></p>
       <p><strong>Test:</strong> <a href="{% url 'test' run.test.pk %}">{{ run.test.name }}</a></p>
-      <p><strong>Date:</strong> {{ run.date }}</p>
+      <p><strong>Date:</strong> {{ run.date }}</p><br>
+      {% if run.nozzle %}
+        <p><strong>Nozzle:</strong> <a href="{% url 'nozzle-detail' run.nozzle.pk %}">{{ run.nozzle }}</a></p>
+      {% else %}
+        <p><strong>Nozzle:</strong> {{ run.nozzle }}</p>
+      {% endif %}
+      {% if run.cathode %}
+      <p><strong>Cathode:</strong> <a href="{% url 'cathode-detail' run.cathode.pk %}" data-toggle="tooltip" title="Installed: {{run.cathode.installed}}">{{run.cathode.type}}</a></p>
+      {% else %}
+      <p><strong>Cathode:</strong> {{run.cathode}} </p>
+      {% endif %}
+      <p><strong>Disks:</strong> 
+      {% for disk in run.disks.all %}
+      <p style="text-indent: 15px"><a href="{% url 'disk-detail' disk.pk %}">{{ disk.name }}</a></p>
+      {% endfor %}
   </div>
-  <div class="col-sm-4">
+  <div class="col-sm-3">
         <p><strong>PI:</strong> {{ run.principle_investigator.name }}</p>
         <p><strong>Test Engineer:</strong> {{ run.test_engineer.name }}</p>
-        <p><strong>Operator:</strong> {{ run.operator.name }}</p>
+        <p><strong>Operator:</strong> {{ run.operator.name }}</p><br>
+        <p><strong>Diagnostics:</strong></p>
+            {% for diag in run.diagnostics.all %}
+            <p style="text-indent: 15px">
+            <a href="{% url 'diagnostic-detail' diag.pk %}" data-toggle="tooltip" title="{{diag.sensor}}">{{diag.name}}</a>
+            </p>
+            {% endfor %}
   </div>
-  <div class="col-sm-5">
-      <p><strong>Run objective:</strong> {{ run.objective }}</p>
-      <p><strong>Notes:</strong> {{ run.notes }}</p>
+  <div class="col-sm-6">
+      <p><strong>Run objective:</strong> {{ run.objective | linebreaks }}</p>
+      <p><strong>Procedure:</strong> {{ run.procedure | linebreaks }}</p>
+      <p><strong>Notes:</strong> {{ run.notes | linebreaks }}</p>
     </div>
 </div>
 
 <hr>
-<!-- Diagnostics -->
+<!-- Conditions -->
+{% if run.conditioninstance_set.all %}
 <div class="row">
-    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Diagnostics</h4></div>
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Conditions</h4></div>
+</div>
+<div class="row toggle" style="display:block;">
+    <table style="width:100%">
+    <tr>
+        <th>Name</th>
+        <th>Dwell Time (s)</th>
+        <th>Current (A)</th>
+        <th>Plasma gas (g/s)</th>
+        <th>Shield gas (g/s)</th>
+        <th>L1 arm</th>
+        <th>L2 arm</th>
+        <th>Sweep arm</th>
+    </tr>
+    {% for cond in run.conditioninstance_set.all %}
+        <tr>
+            <td>{{cond.condition.name}}</td>
+            <td>{{cond.dwell_time}}</td>
+            <td>{{cond.condition.current}}</td>
+            <td>[{{cond.condition.plasma_gas}}] {{cond.condition.plasma_gas_flow}}</td>
+            <td>[{{cond.condition.shield_gas}}] {{cond.condition.shield_gas_flow}}</td>
+            <td>{% for dev in cond.l1_devices.all%}dev.name,{% endfor %} {{cond.l1_insertion}} {% if cond.l1_insertion %}[s]{%endif%}</td>
+            <td>{% for dev in cond.l2_devices.all%}dev.name,{% endfor %} {{cond.l2_insertion}} {% if cond.l2_insertion %}[s]{%endif%}</td>
+            <td>{% for dev in cond.sweep_devices.all%}dev.name,{% endfor %} {{cond.sweep_insertion}} {% if cond.sweep_insertion %}[s]{%endif%}</td>
+        </tr>
+    {% endfor %}
+    </table>
+</div>
+<!-- end conditions-->
+<hr>
+{% endif %}
+
+<!-- system parameters -->
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>System Parameters</h4></div>
+</div>
+<div class="row" style="display:none;">
+    <div class="col-sm-4" style="pytmargin-left:10px;margin-top:20px">
+        <table style="width:100%">
+            <caption>Gas Settings</caption>
+            <tr>
+                <th></th>
+                <th>Initial Pressure</th>
+                <th>Final Pressure</th>
+            </tr>
+            <tr>
+                <th>Main gas: {{run.gassettings.plasma_gas.name}}</th>
+                <td>{{run.gassettings.plasma_gas_initial_pressure}}</td>
+                <td>{{run.gassettings.plasma_gas_final_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Shield gas: {{run.gassettings.shield_gas.name}}</th>
+                <td>{{run.gassettings.shield_gas_initial_pressure}}</td>
+                <td>{{run.gassettings.shield_gas_final_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Purge gas: {{run.gassettings.purge_gas.name}}</th>
+                <td>{{run.gassettings.purge_gas_initial_pressure}}</td>
+                <td>{{run.gassettings.purge_gas_final_pressure}}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        <table style="width:100%">
+            <caption>Vacuum System</caption>
+            <tr>
+                <th>Pump base pressure (torr)</th>
+                <td>{{run.vacuumsystem.pump_base_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Chamber no purge pressure (torr)</th>
+                <td>{{run.vacuumsystem.chamber_no_purge_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Chamber purge pressure (torr)</th>
+                <td>{{run.vacuumsystem.chamber_purge_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Chamber post-test pressure (torr)</th>
+                <td>{{run.vacuumsystem.chamber_posttest_pressure}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        <table style="width:100%">
+            <caption>Sensor Water Loop</caption>
+            <tr>
+                <th>Temperature (F)</th>
+                <td>{{run.sensorwaterloop.temperature}}</td>
+            </tr>
+            <tr>
+                <th>Conductivity (uS)</th>
+                <td>{{run.sensorwaterloop.conductivity}}</td>
+            </tr>
+            <tr>
+                <th>Arc supply pressure (PSIG)</th>
+                <td>{{run.sensorwaterloop.arc_supply_pressure}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        <table style="width:100%">
+            <caption>Distilled Water Loop</caption>
+            <tr>
+                <th>Temperature (F)</th>
+                <td>{{run.distilledwaterloop.temperature}}</td>
+            </tr>
+            <tr>
+                <th>Conductivity (uS)</th>
+                <td>{{run.distilledwaterloop.conductivity}}</td>
+            </tr>
+            <tr>
+                <th>Arc supply pressure (PSIG)</th>
+                <td>{{run.distilledwaterloop.arc_supply_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Arc return pressure (PSIG)</th>
+                <td>{{run.distilledwaterloop.arc_return_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Spare supply pressure (PSIG)</th>
+                <td>{{run.distilledwaterloop.spare_supply_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Spare return pressure (PSIG)</th>
+                <td>{{run.distilledwaterloop.spare_return_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Chamber supply pressure (PSIG)</th>
+                <td>{{run.distilledwaterloop.chamber_supply_pressure}}</td>
+            </tr>
+
+        </table>
+    </div>
+
+    <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
+        <table style="width:100%">
+        <caption>Vacuum Water Loop</caption>
+            <tr>
+                <th> Heat ex. pressure (PSIG)</th>
+                <td>{{run.vacuumwaterloop.ex_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Heat ex. flow (GPM)</th>
+                <td>{{run.vacuumwaterloop.ex_flow}}</td>
+            </tr>
+            <tr>
+                <th>Vacuum pump pressure (PSIG)</th>
+                <td>{{run.vacuumwaterloop.vac_pressure}}</td>
+            </tr>
+            <tr>
+                <th>Vacuum pump flow (GPM)</th>
+                <td>{{run.vacuumwaterloop.vac_flow}}</td>
+            </tr>
+            <tr>
+                <th>Vacuum pump exit temperature (F)</th>
+                <td>{{run.vacuumwaterloop.vac_exit_temperature}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+<hr>
+<!-- end system parameters row-->
+
+<!-- Data/plotting -->
+<div class="row">
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Run Data</h4></div>
 </div>
 <div class="row" style="display:none;">
     <div class="col-sm-3" style="margin-left:10px;margin-top:20px">
@@ -62,46 +263,16 @@
         {{ script | safe }}
     </div>
 </div>
-<!-- end diagnostics row-->
+<!-- end data/plotting row-->
 
 <hr>
 
-<!-- Conditions -->
-{% if run.conditioninstance_set.all %}
-<div class="row">
-    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Conditions</h4></div>
-</div>
-<div class="row toggle" style="display:none;">
-    <table style="width:100%">
-    <tr>
-        <th>Name</th>
-        <th>Dwell Time (s)</th>
-        <th>Current (A)</th>
-        <th>Plasma gas (g/s)</th>
-        <th>Shield gas (g/s)</th>
-        <th>Nozzle (cm)</th>
-    </tr>
-    {% for cond in run.conditioninstance_set.all %}
-        <tr>
-            <td>{{cond.condition.name}}</td>
-            <td>{{cond.dwell_time}}</td>
-            <td>{{cond.condition.current}}</td>
-            <td>{{cond.condition.plasma_gas_flow}}</td>
-            <td>{{cond.condition.shield_gas_flow}}</td>
-            <td>{{cond.condition.nozzle_diameter}}</td>
-        </tr>
-    {% endfor %}
-    </table>
-</div>
-<!-- end conditions-->
-<hr>
-{% endif %}
 
 
-<!-- Gases -->
+<!-- Gases 
 {% if run.gassettings %}
 <div class="row">
-    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Gases</h4></div>
+    <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>Gas settings</h4></div>
 </div>
 <div class="row toggle" style="display:none;">
     <table style="width:50%">
@@ -117,32 +288,19 @@
         </tr>
     </table>
 </div>
-<!-- end gases-->
 <hr>
+ end gases-->
+
 {% endif %}
 
-
-<!-- Files -->
 <div class="row">
     <div class="col-sm-3" style="margin-left:5px;margin-bottom:20px"><h4><a href="#" class="toggle">+</a>File attachments</h4></div>
 </div>
 <div class="row toggle" style="display:none;">
     <div class="col-sm-2"><a href="{% url 'run-detail-csv' run.pk %}">Diagnostic Spreadsheet</a></div>
-    {% if run.fileattachments.run_sheet %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.run_sheet.url}}">Run Sheet</a></div>
-    {%endif%}
-    {% if run.fileattachments.pretest_photo %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.pretest_photo.url}}">Pretest Photo</a></div>
-    {%endif%}
-    {% if run.fileattachments.posttest_photo %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.posttest_photo.url}}">Posttest Photo</a></div>
-    {%endif%}
-    {% if run.fileattachments.video %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.video.url}}">Video</a></div>
-    {%endif%}
-    {% if run.fileattachments.spectra %}
-    <div class="col-sm-2"><a href="{{run.fileattachments.spectra.url}}">Spectra</a></div>
-    {%endif%}
+    {% for attachment in run.settingattachment_set.all %}
+        <div class="col-sm-2"><a href="{{attachment.file.url}}">{{attachment.name}}</a></div>
+    {% endfor %}
 </div>
 <!-- end files-->
 <hr>

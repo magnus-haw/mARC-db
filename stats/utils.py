@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize, integrate
-from numpy import gradient as grad
+from numpy import gradient as grad, diff
 
 def recursive_fit_piecewise(x,y, err_thresh, level=0, slope=10.):
     """ Recursive top-down algorithm for piece-wise linear 
@@ -32,16 +32,35 @@ def recursive_fit_piecewise(x,y, err_thresh, level=0, slope=10.):
     if level ==0:
         lpoints = [(x[0],y[0])]+lpoints
         rpoints = rpoints + [(x[-1],y[-1])]
+        #print(left_rms,right_rms,p)
     if left_rms < err_thresh or right_rms < err_thresh:
         ret = lpoints + [(p[0],p[1])] + rpoints
     else:
         ret = lpoints + rpoints
 
     if level == 0:
+        ret = check_segments(x,y,ret,thresh=err_thresh)
         ret = merge_similar_segments(ret, slope=slope)
         ret = np.array(ret)
     
     return ret
+
+def check_segments(x,y,pts,thresh=7.5):
+    new_pts =[pts[0]]
+    for i in range(1,len(pts)):
+        x0,y0 = pts[i-1]
+        x1,y1 = pts[i]
+        
+        inds = (x>=x0)*(x<=x1)
+        xp,yp = x[inds],y[inds]
+
+        yi = (y1-y0)*(xp-x0) + y0
+        rms = np.sqrt(np.mean((yi-yp)**2))
+        if rms > thresh:
+            p, cov, left_rms, right_rms = fit_piecewise(xp,yp)
+            new_pts.append((p[0],p[1]))
+        new_pts.append(pts[i])
+    return new_pts
 
 def piecewise_linear(x, x0, y0, k1, k2):
     x = np.array(x, dtype=np.float)
@@ -163,18 +182,20 @@ def remove_small_segments(clean_pts):
         dp[:,0] /= xnorm
         dp[:,1] /= ynorm
         
-        for i in range(1,len(clean_pts)-2,1):
+        i=1
+        while i < len(clean_pts)-2:
             dl1 = np.linalg.norm(dp[i-1])
             dl2 = np.linalg.norm(dp[i])
             dl3 = np.linalg.norm(dp[i+1])
 
             if dl1/dl2 > 5 and dl3/dl2 > 5:
                 extra_clean.append(clean_pts[i+1])
-                extra_clean.append(clean_pts[i+2])
+                i += 2
             else:
                 extra_clean.append(clean_pts[i])
-                extra_clean.append(clean_pts[i+1])
-                extra_clean.append(clean_pts[i+2])
+                i += 1
+        extra_clean.append(clean_pts[-2])
+        extra_clean.append(clean_pts[-1])
         return np.array(extra_clean)
     else:
         return np.array(clean_pts)
@@ -216,13 +237,23 @@ def clean_series(x,y):
     xnn = xn[mask==0]
     return xnn.copy(),ynn.copy()
     
-def integral_estimator(xi,yi, thresh=7.5):
+def integral_estimator(xi,yi, thresh=40):
     x,y = clean_series(xi,yi)
     y_int = integrate.cumtrapz(y, x, initial=0)
     pts = recursive_fit_piecewise(x,y_int,thresh)
     pts = remove_small_segments(pts)
     return np.array(pts)
     
+def infer_conditions(pts):
+    dt = diff(pts[:,0])
+    dI = diff(pts[:,1])
+    conditions = []
+    for i in range(0,len(dt)):
+        if dt[i] >5 and dI[i]/dt[i] > 10:
+            conditions.append({'value':dI[i]/dt[i], 'start':pts[i,0], 'end':pts[i+1,0]})
+    return conditions
+
+
 # if __name__ == "__main__":
 #     x = np.arange(0,51.)
 #     y = np.arange(0,51.)
@@ -261,22 +292,26 @@ if __name__ == "__main__":
 
     data = df.to_numpy()
     cols = df.columns
-
+    vals = []
     for i in range(0,len(cols),2):
         x,y = data[:,i], data[:,i+1]
-        
+        print(i+1, cols[int(i+1)])
         if len(x) > 50:
 
-            fig = plt.figure()
-            plt.subplot(311)
-            plt.plot(x,y)
+            # fig = plt.figure()
+            # plt.subplot(311)
+            # plt.plot(x,y)
 
-            plt.subplot(312)
-            plt.plot(x,grad(y))
+            # plt.subplot(312)
+            # plt.plot(x,grad(y))
 
-            plt.subplot(313)
-            y_int = integrate.cumtrapz(y, x, initial=0)
-            plt.plot(x,y_int)
-            pts = integral_estimator(x,y, thresh=7.5)
-            plt.plot(pts[:,0], pts[:,1],'go-')
-            plt.show()
+            # plt.subplot(313)
+            # y_int = integrate.cumtrapz(y, x, initial=0)
+            # plt.plot(x,y_int)
+            pts = integral_estimator(x,y)
+            conds = infer_conditions(pts)
+            for d in conds:
+                vals.append(d['value'])
+            #plt.plot(pts[:,0], pts[:,1],'go-')
+            #plt.show()
+    print(vals, len(vals))

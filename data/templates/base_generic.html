@@ -16,6 +16,11 @@
 
   <!-- Add additional CSS in static file -->
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <script>
+    $(document).ready(function(){
+      $('[data-toggle="tooltip"]').tooltip();   
+    });
+  </script>
 </head>
 <body>
   <div class="container-fluid">

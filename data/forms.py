@@ -1,5 +1,5 @@
 from django import forms
-from .models import Record,Series,Test,Diagnostic
+from .models import Test,Diagnostic
 
 class SearchForm(forms.Form):
     tests = forms.ModelMultipleChoiceField(

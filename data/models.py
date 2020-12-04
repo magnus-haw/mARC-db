@@ -46,8 +46,12 @@ class Run(models.Model):
     test_engineer = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "test_engineer")
     principle_investigator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL, related_name = "principle_investigator")
     operator = models.ForeignKey(Person, null=True, on_delete=models.SET_NULL,related_name = "operator")
-    objective = models.TextField(null=True)
-    procedure = models.TextField(null=True)
+    objective = models.TextField(null=True,blank=True)
+    procedure = models.TextField(null=True,blank=True)
+    nozzle = models.ForeignKey('system.Nozzle',null=True,on_delete=models.SET_NULL)
+    cathode = models.ForeignKey('system.Cathode', on_delete=models.SET_NULL, null=True)
+    disks = models.ManyToManyField('system.Disk', blank=True)
+    diagnostics = models.ManyToManyField('Diagnostic')
     notes = models.TextField(null=True,blank=True)
     
     class Meta:
@@ -111,8 +115,7 @@ class Diagnostic(models.Model):
     notes = models.TextField(blank=True,null=True)
     sensor= models.CharField(max_length=200)
     description = models.TextField()
-    resolution = models.FloatField(blank=True,null=True)
-    noise = models.FloatField(blank=True,null=True)
+    datasheet = models.FileField(null=True, blank=True)
     
     def __str__(self):
         return self.name
@@ -145,6 +148,33 @@ class MyArrayField(models.TextField):
 class TimeSeries(models.Model):
     time = MyArrayField()
 
+class DiagnosticCalibration(models.Model):
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    vinput = MyArrayField()
+    inputUnits = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    output = MyArrayField()
+    resolution = models.FloatField(blank=True,null=True)
+    temporalresolution = models.FloatField(blank=True,null=True)
+    
+    description = models.TextField()
+    date = models.DateTimeField(null=True)
+    expiration = models.DateField(null=True)
+    datasheet = models.FileField(null=True, blank=True)
+
+    def calibrate(self,vin):
+        cal = np.interp(vin, self.vinput,self.output, left=np.nan, right=np.nan)
+        return cal
+
+class DiagnosticSetup(models.Model):
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    date = models.DateTimeField(null=True)
+    expiration = models.DateField(null=True, blank=True)
+    description = models.TextField()
+    image = models.ImageField(null=True)
+
+    def __str__(self):
+        return self.diagnostic.name + str(self.date)
+
 class DiagnosticSeries(models.Model):
     time = models.ForeignKey(TimeSeries, on_delete=models.CASCADE)
     values = MyArrayField()
@@ -155,18 +185,28 @@ class DiagnosticSeries(models.Model):
     def __str__(self):
         return self.name
 
-class Series(models.Model):
+class DiagnosticFile(models.Model):
+    run = models.ForeignKey(Run,on_delete=models.CASCADE)
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
-    run = models.ForeignKey(Run, on_delete=models.CASCADE)
-    name = models.CharField(max_length=150)
-    
-    def __str__(self):
-        return self.name
+    title = models.CharField(max_length=150)
+    file = models.FileField()
+
+    DOCUMENT = 'DOC'
+    IMAGE = 'IMG'
+    VIDEO = 'VID'
+    OTHER = 'OTR'
+    FILETYPES = [
+        (DOCUMENT, 'Document'),
+        (IMAGE, 'Image'),
+        (VIDEO, 'Video'),
+        (OTHER, 'Other'),
+    ]
+    type = models.CharField(
+        max_length=3,
+        choices=FILETYPES,
+        default=DOCUMENT,
+    )
+    description = models.TextField(null=True, blank=True)
 
     class Meta:
-        verbose_name_plural = "Series"
-
-class Record(models.Model):
-    series = models.ForeignKey(Series, on_delete=models.CASCADE)
-    value = models.FloatField(null=True,blank=True)
-    index = models.IntegerField(editable=False)
+        verbose_name_plural="diagnostic files"

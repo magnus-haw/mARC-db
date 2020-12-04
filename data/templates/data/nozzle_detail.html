@@ -1,0 +1,14 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Nozzle: {{ nozzle.name }}</h1>
+
+  <p><strong>Diameter [cm]:</strong> {{ nozzle.diameter }}</p>
+  <p><strong>Install date:</strong> {{ nozzle.installed }}</p>
+  <p><strong>Notes:</strong> {{ nozzle.notes }}</p>
+  {% if nozzle.photo %}
+    <img src="{{nozzle.photo.url}}" alt="{{nozzle.name}}">
+  {% endif %}
+  <div style="margin-left:20px;margin-top:20px">
+  </div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>{{ cathode.name }}</h1>
+
+  <p><strong>Description:</strong> {{ cathode.description }}</p>
+  <p><strong>Type:</strong> {{ cathode.type }}</p>
+  <p><strong>Install date:</strong> {{ cathode.installed }}</p>
+  <p><strong>Removal date:</strong> {{ cathode.removed }}</p>
+  <p><strong>Notes:</strong> {{ cathode.notes }}</p>
+  <div style="margin-left:20px;margin-top:20px">
+  </div>
+{% endblock %}

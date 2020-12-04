@@ -1,0 +1,12 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Disk: {{ disk.name }}</h1>
+
+  <p><strong>Notes:</strong> {{ disk.notes }}</p>
+  {% if disk.photo %}
+    <img src="{{disk.photo.url}}" alt="{{disk.name}}">
+  {% endif %}
+  <div style="margin-left:20px;margin-top:20px">
+  </div>
+{% endblock %}

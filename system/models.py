@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Run
+from data.models import Run, Diagnostic, Person
 
 # Create your models here.
 class Gas(models.Model):
@@ -16,10 +16,16 @@ class Gas(models.Model):
 
 class StingDevice(models.Model):
     name = models.CharField(max_length=200)
-    sn = models.CharField(max_length=200)
-    size = models.CharField(max_length=200	)
-    limits = models.CharField(max_length=200)
-    notes = models.TextField(null=True)
+    diagnostic = models.ForeignKey(Diagnostic,on_delete=models.SET_NULL, null=True, blank=True)
+    #sample = models.ForeignKey(Coupon) ->TODO
+    description = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+class StingArm(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -58,7 +64,41 @@ class Camera(models.Model):
 class Nozzle(models.Model):
     name = models.CharField(max_length=200)
     diameter = models.FloatField(verbose_name="Diameter (cm)",null=True)
+    installed = models.DateField(blank=True,null=True)
     notes = models.TextField(blank=True,null=True)
+    photo = models.ImageField(null=True,blank=True)
+
+    def __str__(self):
+        return self.name
+
+class Cathode(models.Model):
+    name = models.CharField(max_length=200)
+    TUNGSTEN = 'W'
+    SILVERPLUS = 'Ag+'
+    COPPER = 'Cu'
+    CATHODETYPES = [
+        (TUNGSTEN, 'Tungsten'),
+        (SILVERPLUS, 'SilverPlus'),
+        (COPPER, 'Copper'),
+    ]
+    type = models.CharField(
+        max_length=3,
+        choices=CATHODETYPES,
+        default=SILVERPLUS,
+    )
+    installed = models.DateField(blank=True,null=True)
+    removed = models.DateField(blank=True,null=True)
+    description = models.TextField(blank=True,null=True)
+    pretest_photo = models.ImageField(blank=True,null=True)
+    posttest_photo= models.ImageField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class Disk(models.Model):
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True,null=True)
+    photo = models.ImageField(null=True,blank=True)
 
     def __str__(self):
         return self.name
@@ -101,7 +141,6 @@ class VacuumSystem(models.Model):
     chamber_purge_pressure = models.FloatField(verbose_name="chamber purge pressure (torr)",null=True)
     chamber_posttest_pressure = models.FloatField(verbose_name="chamber posttest pressure (torr)",null=True)
     
-    
 class GasSettings(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
     plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "plasma_gas")
@@ -118,25 +157,7 @@ class GasSettings(models.Model):
 
     class Meta:
         verbose_name_plural="gas settings"
-
-class HeaterSettings(models.Model):
-    run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    nozzle = models.ForeignKey(Nozzle,null=True,on_delete=models.SET_NULL)
-    total_cathode_time = models.FloatField(null=True,verbose_name="total cathode time (s)")
-    total_arc_on_duration = models.FloatField(null=True,verbose_name="total arc-on duration (s)")
-    number_disks = models.PositiveSmallIntegerField(null=True,default=2)
-    number_cathode_starts = models.PositiveIntegerField(null=True,default=1)
-    class Meta:
-        verbose_name_plural="heater settings"
-
-class StingSettings(models.Model):
-    run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    swivel_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "stingsw")
-    L1_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "L1")
-    L2_sting_arm = models.ForeignKey(StingDevice, null=True, blank=True, on_delete=models.SET_NULL,related_name = "L2")
-    class Meta:
-        verbose_name_plural= "sting settings"
-        
+      
 class FileAttachments(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
     run_sheet = models.FileField(null=True,blank=True)
@@ -148,19 +169,31 @@ class FileAttachments(models.Model):
     class Meta:
         verbose_name_plural="file attachments"
 
-class PhotoAttachment(models.Model):
+class SettingAttachment(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)
-    photo = models.ImageField(null=True,blank=True)
+    name = models.CharField(max_length=100)
+    file = models.FileField()
+    DOCUMENT = 'DOC'
+    IMAGE = 'IMG'
+    VIDEO = 'VID'
+    DATA = 'DAT'
+    OTHER = 'OTR'
+    FILETYPES = [
+        (DOCUMENT, 'Document'),
+        (IMAGE, 'Image'),
+        (VIDEO, 'Video'),
+        (DATA, 'Data'),
+        (OTHER, 'Other'),
+    ]
+    type = models.CharField(
+        max_length=3,
+        choices=FILETYPES,
+        default=DOCUMENT,
+    )
+    description = models.TextField(null=True, blank=True)
 
     class Meta:
-        verbose_name_plural="photos"
-
-##class FileAttachment(models.Model):
-##    run = models.ForeignKey(Run,on_delete=models.CASCADE)
-##    file = models.FileField(null=True,blank=True)
-##
-##    class Meta:
-##        verbose_name_plural="files"
+        verbose_name_plural="file attachment"
 
 class Condition(models.Model):
     name = models.CharField(max_length=100)
@@ -181,17 +214,22 @@ class ConditionInstance(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)
     condition = models.ForeignKey(Condition,on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    start_time = models.FloatField(verbose_name="start time (s)",null=True)
-    end_time = models.FloatField(verbose_name="end time (s)",null=True)
     dwell_time = models.FloatField(default=60,verbose_name="dwell time (s)",null=True,blank=True)
+    
+    #Sting arm section
+    sweep_insertion = models.FloatField(verbose_name="Sweep arm dwell time (s)",null=True,blank=True)
+    sweep_devices = models.ManyToManyField(StingDevice, blank=True, related_name='sweep_devices')
+
+    l1_insertion = models.FloatField(verbose_name="L1 arm dwell time (s)",null=True,blank=True)
+    l1_devices = models.ManyToManyField(StingDevice, blank=True, related_name='l1_devices')
+
+    l2_insertion = models.FloatField(verbose_name="L2 arm dwell time (s)",null=True,blank=True)
+    l2_devices = models.ManyToManyField(StingDevice, blank=True, related_name='l2_devices')
+    
+    # planning to move start/end times to a stats model
+    start_time = models.FloatField(verbose_name="start time (s)",null=True,blank=True)
+    end_time = models.FloatField(verbose_name="end time (s)",null=True,blank=True)
 
     def __str__(self):
         return self.name
 
-class StingInsertion(models.Model):
-    swivel_sting_duration = models.FloatField(default=0,verbose_name="swivel sting duration (s)")
-    L1_sting_duration = models.FloatField(default=0,verbose_name="L1 sting duration (s)")
-    L2_sting_duration = models.FloatField(default=0,verbose_name="L2 sting duration (s)")
-
-    def __str__(self):
-        return self.name

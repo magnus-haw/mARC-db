@@ -1,5 +1,6 @@
-from data.models import Diagnostic,Test,Run,Record,Apparatus,Series,DiagnosticSeries
+from data.models import Diagnostic,Test,Run,Apparatus,DiagnosticSeries, TimeSeries
 from data.forms import SearchForm,UploadTestForm,UploadRunForm
+from system.models import Cathode, Disk, Nozzle
 
 from django.shortcuts import render,render_to_response,get_object_or_404
 from django.http import HttpResponse,HttpResponseRedirect
@@ -47,6 +48,30 @@ def ApparatusDetailView(request,apparatus_pk):
             }
     return render(request, 'data/apparatus_detail.html', context = context)
 
+def CathodeView(request,cathode_pk):
+    cathode = get_object_or_404(Cathode, pk=cathode_pk)
+    
+    context = {
+            'cathode':cathode,
+            }
+    return render(request, 'data/cathode_detail.html', context = context)
+
+def NozzleView(request,nozzle_pk):
+    nozzle = get_object_or_404(Nozzle, pk=nozzle_pk)
+    
+    context = {
+            'nozzle':nozzle,
+            }
+    return render(request, 'data/nozzle_detail.html', context = context)
+
+def DiskView(request,disk_pk):
+    disk = get_object_or_404(Disk, pk=disk_pk)
+    
+    context = {
+            'disk':disk,
+            }
+    return render(request, 'data/disk_detail.html', context = context)
+
 def TestView(request,test_pk):
     test = Test.objects.get(pk=test_pk)
     
@@ -67,25 +92,30 @@ def find_diagnostic(name,apparatus):
                 return dg
         return None
 
-def upload_run(runname,df,test,batch_size=100):
+def upload_run(runname,df,test):
     print(df.describe(),test,runname)
     if df.columns[0] != '':
         run,created_run = Run.objects.get_or_create(name=runname, test=test)
         run.save()
-        
-        for col_name in df.columns:            
+
+        # Identify and save time columns
+        timeheaders = []
+        for col_name in df.columns:
+            if "Time" in col_name:
+                timeheaders.append(col_name)
+        if len(timeheaders) == 0 or len(timeheaders) > 1:
+            return False
+        else:
+            ts, created_ts = TimeSeries.objects.get_or_create(time=df[timeheaders[0]])
+            ts.save()
+        for col_name in df.columns:          
             diagnostic = find_diagnostic(col_name,test.apparatus.pk)
+            vals = df[col_name]
             if diagnostic != None:
-                series,created_series = Series.objects.get_or_create(name=runname+"_"+diagnostic.name,
-                                                                     run=run,diagnostic=diagnostic)
-                if created_series:
-                    print(series.diagnostic)
-                    series.save()
-                
-                    cdata = df[col_name].values
-                    objs = [Record(series=series,index=i,value=cdata[i]) for i in range(0,len(cdata))]
-                    Record.objects.bulk_create(objs,batch_size)    
-    return
+                series,created_series = DiagnosticSeries.objects.get_or_create(name=runname+"_"+diagnostic.name,
+                                                                     run=run,diagnostic=diagnostic, time=ts, values=vals)
+                series.save()
+    return True
 
 @transaction.atomic
 def upload_csv(request,test_pk):
@@ -108,8 +138,7 @@ def upload_csv(request,test_pk):
             try:
                 test = Test.objects.get(pk=test_pk)
                 df = pd.read_csv(csv_file)
-                upload_run(run_name,df,test)
-                success=True
+                success = upload_run(run_name,df,test)
                 
             except Exception as e:
                 #logging.getLogger("error_logger").error("Unable to upload file. "+repr(e))
@@ -183,19 +212,17 @@ def upload_xlsx(request,apparatus_pk):
                           })
     
 
-def ViewDiagnostic(request,pk):
-    dg = get_object_or_404(Diagnostic, pk=pk)
+def ViewDiagnostic(request,diagnostic_pk):
+    dg = get_object_or_404(Diagnostic, pk=diagnostic_pk)
 
-    series_set = Series.objects.filter(diagnostic=pk)
-    run_list = list(set(series_set.values_list('run',flat=True)))
-    run_set = Run.objects.filter(name__in=run_list)
-    test_list = list(set(run_set.values_list('test',flat=True)))
-    test_set = Test.objects.filter(name__in=test_list)
+    # series_set = Series.objects.filter(diagnostic=diagnostic_pk)
+    # run_list = list(set(series_set.values_list('run',flat=True)))
+    # run_set = Run.objects.filter(name__in=run_list)
+    # test_list = list(set(run_set.values_list('test',flat=True)))
+    # test_set = Test.objects.filter(name__in=test_list)
     
     context = {
             'diagnostic':dg,
-            'runs':run_set,
-            'test_list':test_set,
             }
     return render(request, 'data/diagnostic_detail.html', context = context)
 
@@ -218,73 +245,6 @@ def SearchView(request):
         'apparatus':apps,
             }
     return render(request, 'search-base.html', context=context)
-
-# def SearchData(request,apparatus_pk):
-#     if request.method == 'POST':
-
-#         # Create a form instance and populate it with data from the request (binding):
-#         form = SearchForm(request.POST)
-
-#         # Check if the form is valid:
-#         if form.is_valid():
-#             tests = form.cleaned_data['tests']
-#             diags =  form.cleaned_data['diagnostics']
-#             tname = 'Time [s]'
-
-#             dflist,serieslist = [],[]
-#             for test in tests:
-#                 runs = test.run_set.all()
-#                 for r in runs:
-#                     series = r.series_set.filter(diagnostic__in=diags)
-#                     df = pd.DataFrame()
-#                     df.test = test.name
-#                     df.run = r.name
-#                     slist =[]
-#                     for s in series:
-#                         df[s.diagnostic.name] = s.record_set.all().order_by('index').values_list('value',flat=True)
-#                         slist.append(s.pk)
-#                     if len(series)>0:
-#                         ts = r.series_set.get(diagnostic__name = tname)
-#                         df[tname] = ts.record_set.all().order_by('index').values_list('value',flat=True)
-#                         serieslist += [ts.pk]+ slist
-#                         dflist.append(df)
-#             print(df.columns)
-            
-#             mycolor_ind =0
-#             myfigs = []
-#             for d in diags.exclude(name=tname):
-#                 fig = figure(x_axis_label= tname,y_axis_label=d.name,
-#                         plot_width =1000,plot_height =600)
-#                 for df in dflist:
-#                     if d.name in df.columns:
-#                         fig.line(df[tname], df[d.name],line_width = 1, legend_label= df.run+'_'+df.test, line_color=mycolors[mycolor_ind])
-#                         mycolor_ind = (mycolor_ind+1)%len(mycolors)
-#                 fig.legend.click_policy="hide"
-#                 myfigs.append(fig)
-#             bigplot = column(*myfigs)
-#             try:
-#                 script, div = components(bigplot)
-#             except:
-#                 print('Plotting error')
-#                 script,div = '','' 
-#             context = {'form': form,'serieslist':serieslist,'apparatus_pk':apparatus_pk,
-#                        'tests':tests,'diagnostics':diags,'script':script,'div':div}
-            
-#             # render results:
-#             return render(request, 'search_results.html', context)
-    
-#     else:
-#         form = SearchForm()
-#         form.fields["tests"].queryset = Test.objects.filter(apparatus__pk=apparatus_pk)
-#         form.fields['tests'].widget.attrs['size']='15'
-#         form.fields["diagnostics"].queryset = Diagnostic.objects.filter(apparatus__pk=apparatus_pk).exclude(name="Time [s]")
-#         form.fields['diagnostics'].widget.attrs['size']='15'
-
-#     context = {
-#         'form': form,
-#     }
-
-#     return render(request, 'search.html', context)
 
 def SearchData(request,apparatus_pk):
     if request.method == 'POST':
@@ -366,38 +326,6 @@ def DownloadSearchCSV(request,apparatus_pk):
 
     return response
 
-
-# def ViewRun(request,run_pk):
-#     run = get_object_or_404(Run, pk=run_pk)
-#     df = run.get_dataframe()
-#     diagnostics = run.get_diagnostics()
-    
-#     ### Plotting section
-#     xkeys = ['time','time','time','time','time','time','pitot_position','gardon_position']
-#     ykeys = ['voltage','current','column_pressure','chamber_pressure',
-#             'plasma_gas','shield_gas','pitot_pressure','gardon_heat_flux']
-
-#     figs=[]
-#     xkey = "Time [s]"
-#     time = df[xkey].values
-#     cnames = df.columns
-#     for i in range(0,len(cnames)):
-#         if cnames[i] != xkey:
-#             p1 = figure(x_axis_label=xkey, y_axis_label=cnames[i],
-#                 plot_width =1000,plot_height =300)
-#             p1.line(df[xkey], df[cnames[i]], legend= cnames[i], 
-#                 line_width = 2, line_color=mycolors[i])
-#             p1.legend.click_policy="hide"
-#             figs.append(p1)
-
-#     #Store components 
-#     bigplot = column(*figs)
-#     script, div = components(bigplot)
-#     #except:
-#     #    print('Run plotting error')
-#     #    script,div = '',''
-#     return render(request, 'data/run_detail.html', {'run':run,'data':df,'script':script,'div':div,'diagnostics':diagnostics,})
-
 def ViewRun(request,run_pk):
     run = get_object_or_404(Run, pk=run_pk)
     dgs = DiagnosticSeries.objects.filter(run=run)
@@ -408,7 +336,7 @@ def ViewRun(request,run_pk):
     xkey = "Time [s]"
     for i in range(0,len(dgs)):
         dg = dgs[i]
-        n = int(len(dg.values)/5000.)
+        n = int(len(dg.values)/2000.)
         if n < 1:
             t,y = dg.time.time, dg.values
         else:
@@ -422,8 +350,7 @@ def ViewRun(request,run_pk):
     #Store components 
     bigplot = column(*figs)
     script, div = components(bigplot)
-    #except:
-    #    print('Run plotting error')
-    #    script,div = '',''
     return render(request, 'data/run_detail.html', {'run':run,'script':script,'div':div,'diagnostics':diagnostics,})
-mycolors = ['green','red','blue','cyan','orange','black','magenta','purple','olive','lime','yellow','gold','darkred','salmon','deeppink','coral','turquoise','teal','darkkhaki','khaki','navy','steelblue']
+
+mycolors = ['green','red','blue','cyan','orange','black','magenta','purple','olive','lime','yellow','gold','darkred','salmon',
+            'deeppink','coral','turquoise','teal','darkkhaki','khaki','navy','steelblue']
