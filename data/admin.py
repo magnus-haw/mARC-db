@@ -12,8 +12,8 @@ from system.models import CameraSettings, SettingAttachment
 # Register your models here
 
 class TestAdmin(admin.ModelAdmin):
-    list_display = ('name', 'date', 'notes')
-    list_filter = ('date',)
+    list_display = ('name', 'apparatus', 'date', 'notes')
+    list_filter = ('date','apparatus')
     search_fields = ('name', 'test', 'notes')
 
 class VacuumSystemInline(admin.TabularInline):

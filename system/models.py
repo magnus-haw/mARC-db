@@ -231,5 +231,5 @@ class ConditionInstance(models.Model):
     end_time = models.FloatField(verbose_name="end time (s)",null=True,blank=True)
 
     def __str__(self):
-        return self.name
+        return self.run.name+ "_" +self.name
 

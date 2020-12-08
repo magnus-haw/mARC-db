@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from scipy import optimize, integrate
 from numpy import gradient as grad, diff
 
+# from system.models import Condition, ConditionInstance
+# from stats.models import ConditionInstanceFit, ConditionInstanceFlag
+# from data.models import Run, Apparatus
+
 def recursive_fit_piecewise(x,y, err_thresh, level=0, slope=10.):
     """ Recursive top-down algorithm for piece-wise linear 
         fitting. Consecutive splits of domain based on error
@@ -144,15 +148,17 @@ def smooth(x,window_len=11,window='hanning'):
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError("Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-    s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+    #s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
     #print(len(s))
     if window == 'flat': #moving average
         w=np.ones(window_len,'d')
     else:
         w=eval('np.'+window+'(window_len)')
 
-    y=np.convolve(w/w.sum(),s,mode='valid')
-    ret = y[int(window_len/2)-1:-int(window_len/2)-1] 
+    N = window_len
+    spad = np.pad(x, (N//2, N-1-N//2), mode='edge')
+    ret = np.convolve(w/w.sum(),spad,mode='valid')
+    #ret = y[int(window_len/2)-1:-int(window_len/2)-1] 
 
     assert len(ret) == len(x)
     return ret
@@ -237,81 +243,187 @@ def clean_series(x,y):
     xnn = xn[mask==0]
     return xnn.copy(),ynn.copy()
     
-def integral_estimator(xi,yi, thresh=40):
+def integral_estimator(xi,yi, thresh=40., slope=10.):
     x,y = clean_series(xi,yi)
     y_int = integrate.cumtrapz(y, x, initial=0)
-    pts = recursive_fit_piecewise(x,y_int,thresh)
+    pts = recursive_fit_piecewise(x,y_int,thresh,slope=slope)
     pts = remove_small_segments(pts)
     return np.array(pts)
-    
-def infer_conditions(pts):
+
+def infer_stable_portions(t,yi, fraction_thresh=0.1, buffer_dt=[10,2]):
+    wd = min(len(t)//20, 75)
+    #extract each condition segment
+    y = smooth(yi,window_len=wd)
+    # pick out value at halfway mark
+    n = len(t)//2
+    constval = np.nanmean(yi[n:n+20])
+    # find first point where value stabilizes within threshold (e.g. 10%)
+    dy,dymax = abs(y - constval), constval*fraction_thresh
+    ts = t[0:n]
+    unstable = ts[dy[0:n] > dymax]
+    try:
+        stable_start = unstable[-1] + buffer_dt[0]
+    except:
+        stable_start = ts[0] + buffer_dt[0]
+    # find last point where value stabilizes within threshold (e.g. 10%)
+    stable = t[dy < dymax]
+    try:
+        stable_end = stable[-1] - buffer_dt[1]
+    except:
+        stable_end = t[-1] - buffer_dt[1]
+
+    # plt.plot(t,dy)
+    # print(constval)
+    # plt.show()
+    return stable_start, stable_end, constval
+
+def infer_conditions(t,yi, thresh=40., minval=10.):
+    pts = integral_estimator(t,yi, thresh=thresh, slope=minval)
     dt = diff(pts[:,0])
     dI = diff(pts[:,1])
     conditions = []
     for i in range(0,len(dt)):
-        if dt[i] >5 and dI[i]/dt[i] > 10:
-            conditions.append({'value':dI[i]/dt[i], 'start':pts[i,0], 'end':pts[i+1,0]})
+        if dt[i] >5 and dI[i]/dt[i] > minval:
+            inds = (t>pts[i,0])*(t<pts[i+1,0])
+            if len(conditions) == 0:
+                buffer_dt = [10,3]
+            else:
+                buffer_dt = [2,3]
+            stable_start, stable_end, avg = infer_stable_portions(t[inds],yi[inds],buffer_dt=buffer_dt)
+            conditions.append({'value':avg, 'start':pts[i,0], 'end':pts[i+1,0], 
+                               'stable_start':stable_start, 'stable_end':stable_end})
     return conditions
 
+def get_intersection(a0,a1,b0,b1):
+    t0,t1 = max(a0,b0),min(a1,b1)
+    if t0 > t1:
+        return None, None
+    else:
+        return t0,t1
 
+def collate_conditions(condsI,condsF):
+    allconds = []
+    for icond in condsI:
+        for fcond in condsF:
+            t0,t1 = get_intersection(icond['start'],icond['end'],fcond['start'],fcond['end'])
+            ts0,ts1 = get_intersection(icond['stable_start'],icond['stable_end'],fcond['stable_start'],fcond['stable_end'])
+            ival,fval = icond['value'],fcond['value']
+            if t0 is not None:
+                allconds.append({'I_val':ival,'F_val':fval, 'start':t0, 'end':t1,
+                                 'stable_start':ts0, 'stable_end':ts1})
+    return allconds
+
+
+
+    
 # if __name__ == "__main__":
-#     x = np.arange(0,51.)
-#     y = np.arange(0,51.)
+#     # load in current data
+#     fname = "/home/magnus/Desktop/mARC-db/stats/current.csv"
+#     fname = "/Users/mhaw/Desktop/mARC-db/stats/current.csv"
+#     df = pd.read_csv(fname)
 
-#     y[x>10] *= .1
-#     y[x>10] -= y[11]-y[10]
+#     data = df.to_numpy()
+#     cols = df.columns
+#     vals = []
+#     for i in range(0,len(cols),2):
+#         x,y = data[:,i], data[:,i+1]
+#         print(i+1, cols[int(i+1)])
+#         if len(x) > 50:
 
-#     y[x>35] /= .1
-#     y[x>35] -= y[36]-y[35]
-#     y_noise = 1 * np.random.normal(size=y.size)
-#     y += y_noise
-#     #y = smooth(y)
-#     y[25] +=7
-#     y[26] +=7
-#     y[40] +=4
-#     mask = getOutlierMask(y)
-#     y = y[mask==0]
-#     x = x[mask==0]
-#     # y = np.cumsum(y)
+#             # fig = plt.figure()
+#             # plt.subplot(311)
+#             # plt.plot(x,y)
 
-#     pts = recursive_fit_piecewise(x,y,1.5)
-#     # p, cov, Lrms, Rrms = fit_piecewise(x,y)
-#     # print(p, cov)
-#     # print(Lrms, Rrms)
+#             # plt.subplot(312)
+#             # plt.plot(x,grad(y))
 
-#     plt.plot(x,y, 'ro')
-#     plt.plot(pts[:,0], pts[:,1])
-#     # plt.plot(x,piecewise_linear(x,*p),'bo')
-#     plt.show()
+#             # plt.subplot(313)
+#             # y_int = integrate.cumtrapz(y, x, initial=0)
+#             # plt.plot(x,y_int)
+#             pts = integral_estimator(x,y)
+#             conds = infer_conditions(pts)
+#             for d in conds:
+#                 vals.append(d['value'])
+#             #plt.plot(pts[:,0], pts[:,1],'go-')
+#             #plt.show()
+#     print(vals, len(vals))
 
 if __name__ == "__main__":
-    # load in current data
-    fname = "/home/magnus/Desktop/mARC-db/stats/current.csv"
-    fname = "/Users/mhaw/Desktop/mARC-db/stats/current.csv"
-    df = pd.read_csv(fname)
+    import os
+    import sys
+    import django
 
-    data = df.to_numpy()
-    cols = df.columns
-    vals = []
-    for i in range(0,len(cols),2):
-        x,y = data[:,i], data[:,i+1]
-        print(i+1, cols[int(i+1)])
-        if len(x) > 50:
+    proj_path = "/Users/mhaw/Desktop/mARC-db"
+    sys.path.append(proj_path)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mARC.settings")
+    django.setup()
 
-            # fig = plt.figure()
-            # plt.subplot(311)
-            # plt.plot(x,y)
+    from system.models import Condition, ConditionInstance
+    from stats.models import ConditionInstanceFit, ConditionInstanceFlag
+    from data.models import Run, Apparatus
 
-            # plt.subplot(312)
-            # plt.plot(x,grad(y))
+    app = Apparatus.objects.filter(name = "mini-ARC v2.0").first()
+    runs = Run.objects.filter(test__apparatus = app)
 
-            # plt.subplot(313)
-            # y_int = integrate.cumtrapz(y, x, initial=0)
-            # plt.plot(x,y_int)
-            pts = integral_estimator(x,y)
-            conds = infer_conditions(pts)
-            for d in conds:
-                vals.append(d['value'])
-            #plt.plot(pts[:,0], pts[:,1],'go-')
-            #plt.show()
-    print(vals, len(vals))
+    def get_ConditionInstance(cond_dict, ListInsts, thresh=.15):
+        score = np.zeros(len(ListInsts))
+        for i in range(0,len(ListInsts)):
+            cinst = ListInsts[i]
+            I = cinst.condition.current
+            F = cinst.condition.plasma_gas_flow
+            ierr = abs(cond_dict['I_val'] - I)/cond_dict['I_val']
+            ferr = abs(cond_dict['F_val']-F)/cond_dict['F_val']
+            score[i] = np.sqrt(ierr**2 + ferr**2)
+        if score.min() < thresh:
+            return ListInsts[int(np.argmin(score))]
+        else:
+            return None
+
+    for run in runs[0:]:
+        series = run.diagnosticseries_set.all()
+        currentlist = series.filter(name__contains="Arc Current [A]")
+        flowlist = series.filter(name__contains="Plasma gas [g/s]")
+
+        conditionInstances = run.conditioninstance_set.all()
+        #print(conditionInstances)
+        if len(conditionInstances)>=1 and len(currentlist)==1 and len(flowlist)==1:
+            current = currentlist[0]
+            flow = flowlist[0]
+            ti,I = current.time.time, current.values
+            tf,F = flow.time.time, flow.values
+            condsI = infer_conditions(ti,I)
+            condsF = infer_conditions(tf,F, minval=0.1, thresh=.05)
+            tff = tf[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])]
+            FF = F[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])] - condsF[0]['value']
+
+            fig0 = plt.figure(0)
+            plt.plot(tff,smooth(FF,window_len=50))
+            plt.plot(tf,F)
+            plt.plot([condsF[0]['stable_start'],condsF[0]['stable_start']], [0,.8], 'k-')
+            plt.plot([condsF[0]['stable_end'],condsF[0]['stable_end']], [0,.8], 'k-')
+
+            fig1 = plt.figure(1)
+            tii = ti[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])]
+            II = I[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])] - condsI[0]['value']
+            plt.plot(tii,smooth(II,window_len=50))
+            plt.plot(ti,I)
+            for cond in condsI:
+                plt.plot([cond['stable_start'],cond['stable_start']], [0,200], 'k-')
+                plt.plot([cond['stable_end'],cond['stable_end']], [0,200], 'k-')
+
+            condsall = collate_conditions(condsI,condsF)
+            ListInsts = ConditionInstance.objects.filter(run = run)
+            
+            print(run.name)
+            print(condsall)
+            for cond in condsall:
+                ci = get_ConditionInstance(cond, ListInsts, thresh=.15)
+                if hasattr(ci, 'conditioninstancefit'):
+                    cif = ci.conditioninstancefit
+                else:
+                    cif = ConditionInstanceFit(instance= ci, start= cond['start'], end= cond['end'],
+                                        stable_start=cond['stable_start'],stable_end=cond['stable_end'])
+                    cif.save()
+                print(ci)
+
+            plt.show()
