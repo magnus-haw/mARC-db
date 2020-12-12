@@ -109,6 +109,13 @@ class CameraSettings(models.Model):
     lens   = models.ForeignKey(Lens,blank=True,null=True,on_delete=models.SET_NULL)
     opticalfilter = models.ForeignKey(OpticalFilter,blank=True,null=True,on_delete=models.SET_NULL)
     CameraPosition = models.ForeignKey(CameraPosition,blank=True,null=True,on_delete=models.SET_NULL)
+    VIDEO = 'Video'
+    STILL = 'Still'
+    RECORDTYPES = [
+        (VIDEO, 'Video'),
+        (STILL, 'Still'),
+    ]
+    record_type = models.CharField(max_length=5,choices=RECORDTYPES,blank=True, null=True)
 
 class VacuumWaterLoop(models.Model):
     run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
@@ -226,10 +233,6 @@ class ConditionInstance(models.Model):
     l2_insertion = models.FloatField(verbose_name="L2 arm dwell time (s)",null=True,blank=True)
     l2_devices = models.ManyToManyField(StingDevice, blank=True, related_name='l2_devices')
     
-    # planning to move start/end times to a stats model
-    start_time = models.FloatField(verbose_name="start time (s)",null=True,blank=True)
-    end_time = models.FloatField(verbose_name="end time (s)",null=True,blank=True)
-
     def __str__(self):
         return self.run.name+ "_" +self.name
 

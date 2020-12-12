@@ -359,7 +359,7 @@ if __name__ == "__main__":
     django.setup()
 
     from system.models import Condition, ConditionInstance
-    from stats.models import ConditionInstanceFit, ConditionInstanceFlag
+    from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
     from data.models import Run, Apparatus
 
     app = Apparatus.objects.filter(name = "mini-ARC v2.0").first()
@@ -425,5 +425,29 @@ if __name__ == "__main__":
                                         stable_start=cond['stable_start'],stable_end=cond['stable_end'])
                     cif.save()
                 print(ci)
+                dg_series = run.diagnosticseries_set.all()
+                for dgs in dg_series:
+                    ts = dgs.time.time 
+                    vals = dgs.values
 
+                    # stable segment stats
+                    t0,t1 = cif.stable_start, cif.stable_end
+                    inds = (ts>t0)*(ts<t1)
+                    t,v = ts[inds],vals[inds]
+                    avg = np.mean(v)
+                    stdev = np.std(v)
+                    vmin,vmax = v.min(),v.max()
+                    sss,flag= SeriesStableStats.objects.get_or_create(series=dgs, condition=cif,avg=avg,stdev=stdev,
+                                                                 min=vmin,max=vmax)
+                    sss.save()
+
+                    # startup stats
+                    t0,t1 = cif.start, cif.stable_start
+                    inds = (ts>t0)*(ts<t1)
+                    t,v = ts[inds],vals[inds]
+                    stdev = np.std(v)
+                    vmin,vmax = v.min(),v.max()
+                    sss, flag= SeriesStartupStats.objects.get_or_create(series=dgs, condition=cif,dt=t1-t0,stdev=stdev,
+                                                                  min=vmin,max=vmax)
+                    sss.save()
             plt.show()

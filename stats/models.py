@@ -15,8 +15,8 @@ class ConditionInstanceFit(models.Model):
         return self.instance.name + "_" + str(self.start) + "_" + str(self.end)
 
 class SeriesStableStats(models.Model):
-    series = models.OneToOneField(DiagnosticSeries, on_delete=models.CASCADE)
-    condition = models.ForeignKey(ConditionInstance, on_delete=models.CASCADE)
+    series = models.ForeignKey(DiagnosticSeries, on_delete=models.CASCADE)
+    condition = models.ForeignKey(ConditionInstanceFit, on_delete=models.CASCADE)
     avg = models.FloatField(null=True,blank=True)
     stdev = models.FloatField(null=True,blank=True)
     min = models.FloatField(null=True,blank=True)
@@ -24,11 +24,11 @@ class SeriesStableStats(models.Model):
     notes = models.TextField(null=True)
 
     def __str__(self):
-        return self.condition.condition + "_" + self.avg
+        return self.series.diagnostic.name + "_" + self.condition.instance.run.name
 
 class SeriesStartupStats(models.Model):
-    series = models.OneToOneField(DiagnosticSeries, on_delete=models.CASCADE)
-    condition = models.ForeignKey(ConditionInstance, on_delete=models.CASCADE)
+    series = models.ForeignKey(DiagnosticSeries, on_delete=models.CASCADE)
+    condition = models.ForeignKey(ConditionInstanceFit, on_delete=models.CASCADE)
     dt = models.FloatField(null=True,blank=True)
     stdev = models.FloatField(null=True,blank=True)
     min = models.FloatField(null=True,blank=True)
@@ -37,21 +37,3 @@ class SeriesStartupStats(models.Model):
 
     def __str__(self):
         return self.condition.condition + "_" + self.dt
-
-class ConditionInstanceFlag(models.Model):
-    FAILED = 'FAILED'
-    OFFNOMINAL = 'OFF-NOMINAL'
-    SUCCESS = 'SUCCESS'
-    OTHER = 'OTHER'
-    CONDITIONFLAGS = [
-        (FAILED, 'Failed'),
-        (OFFNOMINAL, 'Off-nominal'),
-        (SUCCESS, 'Success'),
-        (OTHER, 'Other'),
-    ]
-    instance = models.ForeignKey(ConditionInstance, on_delete=models.CASCADE)
-    valid = models.BooleanField(null=True,blank=True)
-    flag = models.CharField(max_length=12,choices=CONDITIONFLAGS,null=True,blank=True)
-
-    def __str__(self):
-        return self.condition.condition + "_" + self.flag
