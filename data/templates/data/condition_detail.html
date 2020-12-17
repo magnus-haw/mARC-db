@@ -1,0 +1,69 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="row">
+  <div class="col-sm-12">
+    <h1>Condition: {{ condition.name }}</h1>
+    <hr>
+  </div></div>
+
+  <div class="row">
+    <div class="col-sm-4">
+    <h3>System Settings:</h3><br>
+        <p><strong>Current [A]:</strong> {{ condition.current }}</p>
+        <p><strong>Plasma Gas Flow [g/s]:</strong> {{ condition.plasma_gas_flow }}, {{condition.plasma_gas}}</p>
+        <p><strong>Shield Gas Flow [g/s]:</strong> {{ condition.shield_gas_flow }}, {{condition.shield_gas}}</p>
+        <p><strong>Nozzle:</strong> <a href="{% url 'nozzle-detail' condition.nozzle.pk %}">{{ condition.nozzle }}</a></p>
+        <p><strong># Disks:</strong> {{ condition.disks }}</p>
+        <p><strong>Notes:</strong> {{ condition.notes }}</p><br>
+    </div>
+
+    <div class="col-sm-8">
+    <h3>Condition Statistics:</h3>
+    <table style="width:100%">
+    <tr>
+        <th>Diagnostic</th>
+        <th>Average</th>
+        <th>Stdev</th>
+        <th>Count</th>
+    </tr>
+    {% for cond in condition.diagnosticconditionaverage_set.all %}
+        <tr>
+            <td>{{cond.diagnostic.name}}</td>
+            <td>{{cond.value|floatformat:2}}</td>
+            <td>{{cond.err|floatformat:3}}</td>
+            <td>{{cond.npoints|stringformat:"d"}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    <br>
+    <h3>Associated Runs:</h3>
+    <table style="width:100%">
+    <tr>
+        <th>Test</th>
+        <th>Run</th>
+        <th>Dwell Time (s)</th>
+        <th>L1 arm</th>
+        <th>L2 arm</th>
+        <th>Sweep arm</th>
+    </tr>
+    {% for cond in condition.conditioninstance_set.all %}
+        <tr>
+            <td><a href="{% url 'test' cond.run.test.pk %}">{{cond.run.test.name}}</a></td>
+            <td><a href="{% url 'run-detail' cond.run.pk %}">{{cond.run.name}}</a></td>
+            <td>{{cond.dwell_time}}</td>
+            <td>{% for dev in cond.l1_devices.all%}dev.name,{% endfor %} {{cond.l1_insertion}} {% if cond.l1_insertion %}[s]{%endif%}</td>
+            <td>{% for dev in cond.l2_devices.all%}dev.name,{% endfor %} {{cond.l2_insertion}} {% if cond.l2_insertion %}[s]{%endif%}</td>
+            <td>{% for dev in cond.sweep_devices.all%}dev.name,{% endfor %} {{cond.sweep_insertion}} {% if cond.sweep_insertion %}[s]{%endif%}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    <hr>
+    </div><!-- End col -->
+    
+  </div><!-- End row -->
+
+
+  <div style="margin-left:20px;margin-top:20px">
+  </div>
+{% endblock %}

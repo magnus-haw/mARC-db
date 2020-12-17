@@ -4,10 +4,6 @@ import matplotlib.pyplot as plt
 from scipy import optimize, integrate
 from numpy import gradient as grad, diff
 
-# from system.models import Condition, ConditionInstance
-# from stats.models import ConditionInstanceFit, ConditionInstanceFlag
-# from data.models import Run, Apparatus
-
 def recursive_fit_piecewise(x,y, err_thresh, level=0, slope=10.):
     """ Recursive top-down algorithm for piece-wise linear 
         fitting. Consecutive splits of domain based on error
@@ -313,40 +309,30 @@ def collate_conditions(condsI,condsF):
                                  'stable_start':ts0, 'stable_end':ts1})
     return allconds
 
+def get_ConditionInstance(cond_dict, ListInsts, thresh=.15):
+    score = np.zeros(len(ListInsts))
+    for i in range(0,len(ListInsts)):
+        cinst = ListInsts[i]
+        I = cinst.condition.current
+        F = cinst.condition.plasma_gas_flow
+        ierr = abs(cond_dict['I_val'] - I)/cond_dict['I_val']
+        ferr = abs(cond_dict['F_val']-F)/cond_dict['F_val']
+        score[i] = np.sqrt(ierr**2 + ferr**2)
+    if score.min() < thresh:
+        return ListInsts[int(np.argmin(score))]
+    else:
+        return None
 
-
-    
-# if __name__ == "__main__":
-#     # load in current data
-#     fname = "/home/magnus/Desktop/mARC-db/stats/current.csv"
-#     fname = "/Users/mhaw/Desktop/mARC-db/stats/current.csv"
-#     df = pd.read_csv(fname)
-
-#     data = df.to_numpy()
-#     cols = df.columns
-#     vals = []
-#     for i in range(0,len(cols),2):
-#         x,y = data[:,i], data[:,i+1]
-#         print(i+1, cols[int(i+1)])
-#         if len(x) > 50:
-
-#             # fig = plt.figure()
-#             # plt.subplot(311)
-#             # plt.plot(x,y)
-
-#             # plt.subplot(312)
-#             # plt.plot(x,grad(y))
-
-#             # plt.subplot(313)
-#             # y_int = integrate.cumtrapz(y, x, initial=0)
-#             # plt.plot(x,y_int)
-#             pts = integral_estimator(x,y)
-#             conds = infer_conditions(pts)
-#             for d in conds:
-#                 vals.append(d['value'])
-#             #plt.plot(pts[:,0], pts[:,1],'go-')
-#             #plt.show()
-#     print(vals, len(vals))
+def get_condition_match(cond_dict, cinst, thresh=.15):
+    I = cinst.condition.current
+    F = cinst.condition.plasma_gas_flow
+    ierr = abs(cond_dict['I_val'] - I)/cond_dict['I_val']
+    ferr = abs(cond_dict['F_val']-F)/cond_dict['F_val']
+    score = np.sqrt(ierr**2 + ferr**2)
+    if score < thresh:
+        return True
+    else:
+        return False
 
 if __name__ == "__main__":
     import os
@@ -361,93 +347,96 @@ if __name__ == "__main__":
     from system.models import Condition, ConditionInstance
     from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
     from data.models import Run, Apparatus
+    from stats.views import updateConditionAvgs, updateSeriesStats, updateConditionInstanceFits
 
     app = Apparatus.objects.filter(name = "mini-ARC v2.0").first()
-    runs = Run.objects.filter(test__apparatus = app)
 
-    def get_ConditionInstance(cond_dict, ListInsts, thresh=.15):
-        score = np.zeros(len(ListInsts))
-        for i in range(0,len(ListInsts)):
-            cinst = ListInsts[i]
-            I = cinst.condition.current
-            F = cinst.condition.plasma_gas_flow
-            ierr = abs(cond_dict['I_val'] - I)/cond_dict['I_val']
-            ferr = abs(cond_dict['F_val']-F)/cond_dict['F_val']
-            score[i] = np.sqrt(ierr**2 + ferr**2)
-        if score.min() < thresh:
-            return ListInsts[int(np.argmin(score))]
-        else:
-            return None
+    conditionInstances = ConditionInstance.objects.all()
+    updateConditionInstanceFits(conditionInstances)
 
-    for run in runs[0:]:
-        series = run.diagnosticseries_set.all()
-        currentlist = series.filter(name__contains="Arc Current [A]")
-        flowlist = series.filter(name__contains="Plasma gas [g/s]")
+    conditionInstanceFits = ConditionInstanceFit.objects.all()
+    updateSeriesStats(conditionInstanceFits)
 
-        conditionInstances = run.conditioninstance_set.all()
-        #print(conditionInstances)
-        if len(conditionInstances)>=1 and len(currentlist)==1 and len(flowlist)==1:
-            current = currentlist[0]
-            flow = flowlist[0]
-            ti,I = current.time.time, current.values
-            tf,F = flow.time.time, flow.values
-            condsI = infer_conditions(ti,I)
-            condsF = infer_conditions(tf,F, minval=0.1, thresh=.05)
-            tff = tf[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])]
-            FF = F[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])] - condsF[0]['value']
+    conditions = Condition.objects.all()
+    updateConditionAvgs(app,conditions)
+    
+    # for run in runs[0:]:
+    #     series = run.diagnosticseries_set.all()
+    #     currentlist = series.filter(name__contains="Arc Current [A]")
+    #     flowlist = series.filter(name__contains="Plasma gas [g/s]")
 
-            fig0 = plt.figure(0)
-            plt.plot(tff,smooth(FF,window_len=50))
-            plt.plot(tf,F)
-            plt.plot([condsF[0]['stable_start'],condsF[0]['stable_start']], [0,.8], 'k-')
-            plt.plot([condsF[0]['stable_end'],condsF[0]['stable_end']], [0,.8], 'k-')
+    #     conditionInstances = run.conditioninstance_set.all()
+    #     #print(conditionInstances)
+    #     if len(conditionInstances)>=1 and len(currentlist)==1 and len(flowlist)==1:
+    #         current = currentlist[0]
+    #         flow = flowlist[0]
+    #         ti,I = current.time.time, current.values
+    #         tf,F = flow.time.time, flow.values
+    #         condsI = infer_conditions(ti,I)
+    #         condsF = infer_conditions(tf,F, minval=0.1, thresh=.05)
+    #         # tff = tf[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])]
+    #         # FF = F[(tf>condsF[0]['start'])*(tf<condsF[0]['end'])] - condsF[0]['value']
 
-            fig1 = plt.figure(1)
-            tii = ti[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])]
-            II = I[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])] - condsI[0]['value']
-            plt.plot(tii,smooth(II,window_len=50))
-            plt.plot(ti,I)
-            for cond in condsI:
-                plt.plot([cond['stable_start'],cond['stable_start']], [0,200], 'k-')
-                plt.plot([cond['stable_end'],cond['stable_end']], [0,200], 'k-')
+    #         # fig0 = plt.figure(0)
+    #         # plt.plot(tff,smooth(FF,window_len=50))
+    #         # plt.plot(tf,F)
+    #         # plt.plot([condsF[0]['stable_start'],condsF[0]['stable_start']], [0,.8], 'k-')
+    #         # plt.plot([condsF[0]['stable_end'],condsF[0]['stable_end']], [0,.8], 'k-')
 
-            condsall = collate_conditions(condsI,condsF)
-            ListInsts = ConditionInstance.objects.filter(run = run)
+    #         # fig1 = plt.figure(1)
+    #         # tii = ti[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])]
+    #         # II = I[(ti>condsI[0]['start'])*(ti<condsI[0]['end'])] - condsI[0]['value']
+    #         # plt.plot(tii,smooth(II,window_len=50))
+    #         # plt.plot(ti,I)
+    #         # for cond in condsI:
+    #         #     plt.plot([cond['stable_start'],cond['stable_start']], [0,200], 'k-')
+    #         #     plt.plot([cond['stable_end'],cond['stable_end']], [0,200], 'k-')
+
+    #         condsall = collate_conditions(condsI,condsF)
+    #         ListInsts = ConditionInstance.objects.filter(run = run)
             
-            print(run.name)
-            print(condsall)
-            for cond in condsall:
-                ci = get_ConditionInstance(cond, ListInsts, thresh=.15)
-                if hasattr(ci, 'conditioninstancefit'):
-                    cif = ci.conditioninstancefit
-                else:
-                    cif = ConditionInstanceFit(instance= ci, start= cond['start'], end= cond['end'],
-                                        stable_start=cond['stable_start'],stable_end=cond['stable_end'])
-                    cif.save()
-                print(ci)
-                dg_series = run.diagnosticseries_set.all()
-                for dgs in dg_series:
-                    ts = dgs.time.time 
-                    vals = dgs.values
+    #         print(run.name)
+    #         #print(condsall)
+    #         for cond in condsall:
+    #             ci = get_ConditionInstance(cond, ListInsts, thresh=.15)
+    #             if hasattr(ci, 'conditioninstancefit'):
+    #                 cif = ci.conditioninstancefit
+    #             else:
+    #                 cif = ConditionInstanceFit(instance= ci, start= cond['start'], end= cond['end'],
+    #                                     stable_start=cond['stable_start'],stable_end=cond['stable_end'])
+    #                 cif.save()
+    #             print(cif)
+    #             dg_series = run.diagnosticseries_set.all()
+    #             for dgs in dg_series:
+    #                 ts = dgs.time.time 
+    #                 vals = dgs.values
 
-                    # stable segment stats
-                    t0,t1 = cif.stable_start, cif.stable_end
-                    inds = (ts>t0)*(ts<t1)
-                    t,v = ts[inds],vals[inds]
-                    avg = np.mean(v)
-                    stdev = np.std(v)
-                    vmin,vmax = v.min(),v.max()
-                    sss,flag= SeriesStableStats.objects.get_or_create(series=dgs, condition=cif,avg=avg,stdev=stdev,
-                                                                 min=vmin,max=vmax)
-                    sss.save()
+    #                 # stable segment stats
+    #                 t0,t1 = cif.stable_start, cif.stable_end
+    #                 inds = (ts>t0)*(ts<t1)
+    #                 t,v = ts[inds],vals[inds]
+    #                 # plt.plot(t,v)
+    #                 # plt.title(dgs.diagnostic.name)
+    #                 # plt.show()
+    #                 avg = np.nanmean(v)
+    #                 stdev = np.nanstd(v)
+    #                 vmin,vmax = np.nanmin(v),np.nanmax(v)
+                    
+    #                 existing = SeriesStableStats.objects.filter(condition=cif, series=dgs)
+    #                 if len(existing) == 0:
+    #                     sss = SeriesStableStats(series=dgs, condition=cif,avg=avg,stdev=stdev,min=vmin,max=vmax)
+    #                     print(sss.avg,sss.stdev,sss.min,sss.max)
+    #                     sss.save()
 
-                    # startup stats
-                    t0,t1 = cif.start, cif.stable_start
-                    inds = (ts>t0)*(ts<t1)
-                    t,v = ts[inds],vals[inds]
-                    stdev = np.std(v)
-                    vmin,vmax = v.min(),v.max()
-                    sss, flag= SeriesStartupStats.objects.get_or_create(series=dgs, condition=cif,dt=t1-t0,stdev=stdev,
-                                                                  min=vmin,max=vmax)
-                    sss.save()
-            plt.show()
+    #                 # startup stats
+    #                 t0,t1 = cif.start, cif.stable_start
+    #                 inds = (ts>t0)*(ts<t1)
+    #                 t,v = ts[inds],vals[inds]
+    #                 stdev = np.nanstd(v)
+    #                 vmin,vmax = np.nanmin(v),np.nanmax(v)
+    #                 existing = SeriesStartupStats.objects.filter(condition=cif, series=dgs)
+    #                 if len(existing) == 0:
+    #                     sss = SeriesStartupStats(series=dgs, condition=cif,dt=t1-t0,stdev=stdev,
+    #                                                                 min=vmin,max=vmax)
+    #                     sss.save()
+    #         # plt.show()

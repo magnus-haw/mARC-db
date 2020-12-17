@@ -95,7 +95,7 @@
     </tr>
     {% for cond in run.conditioninstance_set.all %}
         <tr>
-            <td>{{cond.condition.name}}</td>
+            <td><a href="{% url 'condition-detail' cond.condition.pk %}">{{cond.condition.name}}</a></td>
             <td>{{cond.dwell_time}}</td>
             <td>{{cond.condition.current}}</td>
             <td>[{{cond.condition.plasma_gas}}] {{cond.condition.plasma_gas_flow}}</td>

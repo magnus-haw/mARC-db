@@ -13,6 +13,7 @@ urlpatterns = [
     path('diagnostic/<int:diagnostic_pk>', views.ViewDiagnostic, name='diagnostic-detail'),
     path('cathode/<int:cathode_pk>', views.CathodeView, name='cathode-detail'),
     path('nozzle/<int:nozzle_pk>', views.NozzleView, name='nozzle-detail'),
+    path('condition/<int:condition_pk>', views.ConditionView, name='condition-detail'),
     path('disk/<int:disk_pk>', views.DiskView, name='disk-detail'),
     path('run/<int:run_pk>/download_csv/', views.DownloadRunCSV, name='run-detail-csv'),
 

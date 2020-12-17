@@ -1,6 +1,7 @@
 from django.db import models
-from data.models import Run, Diagnostic, DiagnosticSeries, TimeSeries
+from data.models import Run, Diagnostic, DiagnosticSeries, TimeSeries, MyArrayField
 from system.models import ConditionInstance, Condition
+from sklearn import linear_model
 
 # Create your models here.
 class ConditionInstanceFit(models.Model):
@@ -13,6 +14,17 @@ class ConditionInstanceFit(models.Model):
 
     def __str__(self):
         return self.instance.name + "_" + str(self.start) + "_" + str(self.end)
+
+class DiagnosticConditionAverage(models.Model):
+    condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
+    value = models.FloatField(null=True, blank=True)
+    err = models.FloatField(null=True, blank=True)
+    npoints = models.FloatField(null=True, blank=True)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.condition.name + "_" + str(self.diagnostic) + "_" + str(self.value)
 
 class SeriesStableStats(models.Model):
     series = models.ForeignKey(DiagnosticSeries, on_delete=models.CASCADE)
@@ -34,6 +46,48 @@ class SeriesStartupStats(models.Model):
     min = models.FloatField(null=True,blank=True)
     max = models.FloatField(null=True,blank=True)
     notes = models.TextField(null=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.condition.condition + "_" + self.dt
+
+class MyListField(models.TextField):
+    description = "A string list serialized to txt"
+
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        elif isinstance(value, list):
+            return value
+        else:
+            return eval(value)
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        else:
+            strrep = repr(value)
+            return strrep
+
+class LinearModel(models.Model):
+    name = models.CharField(max_length=150)
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE, null=True,blank=True)
+    headers = MyListField(null=True,blank=True)
+    coeff = MyArrayField(null=True,blank=True)
+    intercept = models.FloatField(null=True,blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    fit_method = models.CharField(max_length=100, null=True, blank=True)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name + "_" + str(self.updated_at)
+
+    def getModelObject(self):
+        reg = linear_model.LinearRegression()
+        reg.coef_ = self.coeff
+        reg.intercept_ = self.intercept
+        return reg

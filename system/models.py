@@ -208,8 +208,10 @@ class Condition(models.Model):
     plasma_gas_flow = models.FloatField(default=0,verbose_name="plasma gas flow (g/s)")
     shield_gas_flow = models.FloatField(default=0,verbose_name="shield gas flow (g/s)")
     nozzle = models.ForeignKey(Nozzle,null=True,on_delete=models.SET_NULL, related_name = "Nozzle")
+    disks = models.PositiveIntegerField(default=2)
     shield_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "Shield_gas")
     plasma_gas = models.ForeignKey(Gas,null=True,on_delete=models.SET_NULL, related_name = "Plasma_gas")
+    notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name

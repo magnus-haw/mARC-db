@@ -1,6 +1,6 @@
 from data.models import Diagnostic,Test,Run,Apparatus,DiagnosticSeries, TimeSeries
 from data.forms import SearchForm,UploadTestForm,UploadRunForm
-from system.models import Cathode, Disk, Nozzle
+from system.models import Cathode, Disk, Nozzle, Condition
 
 from django.shortcuts import render,render_to_response,get_object_or_404
 from django.http import HttpResponse,HttpResponseRedirect
@@ -80,6 +80,15 @@ def TestView(request,test_pk):
             'apparatus':test.apparatus,
             }
     return render(request, 'data/test_detail.html', context = context)
+
+def ConditionView(request,condition_pk):
+    condition = Condition.objects.get(pk=condition_pk)
+    
+    context = {
+            'condition':condition,
+            }
+    return render(request, 'data/condition_detail.html', context = context)
+
 
 def find_diagnostic(name,apparatus):
     dgs = Diagnostic.objects.filter(name = name, apparatus=apparatus)
@@ -211,7 +220,6 @@ def upload_xlsx(request,apparatus_pk):
                           "form":form,
                           })
     
-
 def ViewDiagnostic(request,diagnostic_pk):
     dg = get_object_or_404(Diagnostic, pk=diagnostic_pk)
 

@@ -57,7 +57,8 @@ def mARC_Run_sheet(mycanvas, run, linespace = 15):
     drawHorizontalLines(mycanvas, 75,580,[705-i*linespace for i in range(1,5)])
     drawHorizontalLines(mycanvas, 75,580,[580-i*linespace for i in range(0,3)])
     drawVerticalLines(mycanvas, 705,705-4*linespace,[330])
-    drawVerticalLines(mycanvas, 580,580-2*linespace,[330])
+    drawVerticalLines(mycanvas, 580,580-linespace,[330])
+    drawVerticalLines(mycanvas, 580-linespace,580-2*linespace,[285,400])
     drawBox(mycanvas, 78,577,510,420)
     drawHorizontalLines(mycanvas, 78,577,[480-i*linespace for i in range(0,4)])
     drawVerticalLines(mycanvas, 510,420,[77+ 55*(i+1) for i in range(0,6)])
@@ -89,7 +90,7 @@ def mARC_Run_sheet(mycanvas, run, linespace = 15):
     mycanvas.drawString( 77,569,"Nozzle exit diameter (cm)      %s"%run.nozzle.diameter)
     mycanvas.drawString(332,569,"# Disks         %s"%run.disks.count())
     mycanvas.drawString( 77,554,"Total Cathode Time (h:m:s)        %s"%("TBD"))
-    mycanvas.drawString(332,554,"Cathode type:  %s         # Cathode starts: %s"%(run.cathode.type,"TBD"))
+    mycanvas.drawString(295,554,"Cathode type:  %s         # Cathode starts: %s"%(run.cathode.type,"TBD"))
 
     mycanvas.drawString(260,533,"DESIRED TEST CONDITIONS")
     drawHorizontalLines(mycanvas, 260,397,[530])
@@ -200,39 +201,43 @@ def mARC_Run_sheet(mycanvas, run, linespace = 15):
              "HCW-PI-133 Arc return (PSIG)", "HCW-PI-140 Spare supply (PSIG)", 
              "HCW-PI-146 Spare return (PSIG)", "HCW-PI-147 Chamber supply (PSIG)"]
     y=660
-    mycanvas.setFont('Helvetica', 7)
+    mycanvas.setFont('Helvetica', 9)
+    x,dy = 265,14
     for p in plist:
         mycanvas.drawString(95,y,p)
-        y -= 10
-    if run.distilledwaterloop:
-        mycanvas.drawString(250,660,str(run.distilledwaterloop.temperature))
-        mycanvas.drawString(250,650,str(run.distilledwaterloop.conductivity))
-        mycanvas.drawString(250,640,str(run.distilledwaterloop.arc_supply_pressure))
-        mycanvas.drawString(250,630,str(run.distilledwaterloop.arc_return_pressure))
-        mycanvas.drawString(250,620,str(run.distilledwaterloop.spare_supply_pressure))
-        mycanvas.drawString(250,610,str(run.distilledwaterloop.spare_return_pressure))
-        mycanvas.drawString(250,600,str(run.distilledwaterloop.chamber_supply_pressure))
-    drawHorizontalLines(mycanvas, 230,290,[658-10*i for i in range(0,7)])
+        y -= dy
+    if hasattr(run, 'distilledwaterloop'):
+        y=660
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.temperature)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.conductivity)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.arc_supply_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.arc_return_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.spare_supply_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.spare_return_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.distilledwaterloop.chamber_supply_pressure))
+    drawHorizontalLines(mycanvas, x-10,x+35,[658-dy*i for i in range(0,7)])
 
     mycanvas.setFont('Helvetica', 10)
-    mycanvas.drawString(100,560,"VACUUM SYSTEM COOLING")
-    drawHorizontalLines(mycanvas, 100,235,[557])
-    mycanvas.drawString(125,548,"(TAP WATER)")
-    drawHorizontalLines(mycanvas, 125,185,[545])
+    mycanvas.drawString(100,540,"VACUUM SYSTEM COOLING")
+    drawHorizontalLines(mycanvas, 100,235,[537])
+    mycanvas.drawString(125,528,"(TAP WATER)")
+    drawHorizontalLines(mycanvas, 125,185,[525])
     plist = ["VPW-PI-220 heat ex. Press (PSIG)", "VPW-FI-220 heat ex. Press (GPM)", "VPW-PI-230 vac. pump Press. (PSIG)",
              "VPW-FI-230 vac. pump Flow (GPM)", "VPW-TI-280 vac. pump exit T (F)"]
-    y=535
-    mycanvas.setFont('Helvetica', 7)
+    y0,y=505, 505
+    mycanvas.setFont('Helvetica', 9)
+    x,dy = 265,14
     for p in plist:
         mycanvas.drawString(95,y,p)
-        y -= 10
-    if run.vacuumwaterloop:
-        mycanvas.drawString(250,535,str(run.vacuumwaterloop.ex_pressure))
-        mycanvas.drawString(250,525,str(run.vacuumwaterloop.ex_flow))
-        mycanvas.drawString(250,515,str(run.vacuumwaterloop.vac_pressure))
-        mycanvas.drawString(250,505,str(run.vacuumwaterloop.vac_flow))
-        mycanvas.drawString(250,495,str(run.vacuumwaterloop.vac_exit_temperature))
-    drawHorizontalLines(mycanvas, 230,290,[533-10*i for i in range(0,5)])
+        y -= dy
+    if hasattr(run, 'vacuumwaterloop'):
+        y=y0
+        mycanvas.drawString(x,y,str(run.vacuumwaterloop.ex_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.vacuumwaterloop.ex_flow)); y-=dy
+        mycanvas.drawString(x,y,str(run.vacuumwaterloop.vac_pressure)); y-=dy
+        mycanvas.drawString(x,y,str(run.vacuumwaterloop.vac_flow)); y-=dy
+        mycanvas.drawString(x,y,str(run.vacuumwaterloop.vac_exit_temperature))
+    drawHorizontalLines(mycanvas, x-10,x+35,[y0-2-dy*i for i in range(0,5)])
 
     mycanvas.setFont('Helvetica', 10)
     mycanvas.drawString(420,690,"SENSOR COOLING")
@@ -240,16 +245,92 @@ def mARC_Run_sheet(mycanvas, run, linespace = 15):
     mycanvas.drawString(420,678,"(DISTILLED WATER)")
     drawHorizontalLines(mycanvas, 420,515,[675])
     plist = ["SKW-TI-401 Temp (F)", "SKW-ST-401 Conduct. (uS)", "SKW-PI-440 sensor supply (PSIG)"]
-    y=660
-    mycanvas.setFont('Helvetica', 7)
+    y0,y,dy, x=660,660,14, 490
+    mycanvas.setFont('Helvetica', 9)
     for p in plist:
         mycanvas.drawString(340,y,p)
-        y -= 10
-    if run.sensorwaterloop:
-        mycanvas.drawString(490,660,str(run.sensorwaterloop.temperature))
-        mycanvas.drawString(490,650,str(run.sensorwaterloop.conductivity))
-        mycanvas.drawString(490,640,str(run.sensorwaterloop.arc_supply_pressure))
-    drawHorizontalLines(mycanvas, 475,535,[658-10*i for i in range(0,3)])
+        y -= dy
+    if hasattr(run,'sensorwaterloop'):
+        y=y0
+        mycanvas.drawString(x,y,str(run.sensorwaterloop.temperature));y -= dy
+        mycanvas.drawString(x,y,str(run.sensorwaterloop.conductivity));y -= dy
+        mycanvas.drawString(x,y,str(run.sensorwaterloop.arc_supply_pressure))
+    drawHorizontalLines(mycanvas, x-15,x+45,[y0-2-dy*i for i in range(0,3)])
+###########################################################################
+    y -= 20
+    mycanvas.setFont('Helvetica', 10)
+    mycanvas.drawString(440,y,"GASES"); y -= 3
+    drawHorizontalLines(mycanvas, 440,475,[y]); y -= 15
+
+    mycanvas.drawString(390,y,"Gas")
+    mycanvas.drawString(445,y,"Initial (PSIG)")
+    mycanvas.drawString(515,y,"Final (PSIG)"); y -= 20
+
+    plist = ["Main", "Shield", "Purge"]
+    for p in plist:
+        mycanvas.drawString(335,y,p)
+        
+        x,l = 375,60
+        for i in range(0,3):
+            drawHorizontalLines(mycanvas, x,x+l,[y])
+            if hasattr(run,'gassettings'):
+                if p == "Main":
+                    if i==0:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.plasma_gas.name))
+                    elif i==1:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.plasma_gas_initial_pressure))
+                    elif i==2:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.plasma_gas_final_pressure))
+                if p == "Shield":
+                    if i==0:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.shield_gas.name))
+                    elif i==1:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.shield_gas_initial_pressure))
+                    elif i==2:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.shield_gas_final_pressure))
+                if p == "Purge":
+                    if i==0:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.purge_gas.name))
+                    elif i==1:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.purge_gas_initial_pressure))
+                    elif i==2:
+                        mycanvas.drawString(x+12,y+1,str(run.gassettings.purge_gas_final_pressure))
+            x+= l+10
+        y -= 15
+            
+    mycanvas.drawString(375,y,"low-side P")
+    drawHorizontalLines(mycanvas, 425,465,[y])
+    mycanvas.drawString(480,y,"Roto")
+    drawHorizontalLines(mycanvas, 505,540,[y])
+
+#################################################################
+    y -= 40
+    mycanvas.setFont('Helvetica', 10)
+    x= 400
+    mycanvas.drawString(x,y,"VACUUM SYSTEM"); y -= 3
+    drawHorizontalLines(mycanvas, x,x+90,[y]); y -= 15
+
+    mycanvas.drawString(335,y,"Pump Base Pressure (GS-PI-381)");y-=15
+    drawHorizontalLines(mycanvas, 500,540,[y-1])
+    if hasattr(run,'vacuumsystem'):
+        mycanvas.drawString(510,y,str(run.vacuumsystem.pump_base_pressure))
+    mycanvas.drawString(540,y,"Torr"); y -= 15
+    mycanvas.drawString(335,y,"Chamber Base Pressure (GS-PIT-374)");y -= 15
+    mycanvas.drawString(350,y,"No purge")
+    drawHorizontalLines(mycanvas, 500,540,[y-1])
+    if hasattr(run,'vacuumsystem'):
+        mycanvas.drawString(510,y,str(run.vacuumsystem.chamber_no_purge_pressure))
+    mycanvas.drawString(540,y,"Torr"); y -= 15
+    mycanvas.drawString(350,y,"Purge")
+    drawHorizontalLines(mycanvas, 500,540,[y-1])
+    if hasattr(run,'vacuumsystem'):
+        mycanvas.drawString(510,y,str(run.vacuumsystem.chamber_purge_pressure))
+    mycanvas.drawString(540,y,"Torr"); y -= 15
+    mycanvas.drawString(350,y,"Post-test")
+    drawHorizontalLines(mycanvas, 500,540,[y-1])
+    if hasattr(run,'vacuumsystem'):
+        mycanvas.drawString(510,y,str(run.vacuumsystem.chamber_posttest_pressure))
+    mycanvas.drawString(540,y,"Torr"); y -= 15
 
 from django.conf import settings
 import mARC.settings as app_settings
@@ -260,7 +341,7 @@ django.setup()
 from data.models import Run
 from system.models import ConditionInstance, Condition
 
-run = Run.objects.filter(name="Run_14").first()
+run = Run.objects.filter(name="Run_15").first()
 date = "05/13/2019"
 title = "Appendix A: mARC Run Sheet"
 
