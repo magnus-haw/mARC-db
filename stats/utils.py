@@ -340,6 +340,7 @@ if __name__ == "__main__":
     import django
 
     proj_path = "/Users/mhaw/Desktop/mARC-db"
+    proj_path = "/Volumes/TSF Databases/mARC II documents/mARC-db"
     sys.path.append(proj_path)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mARC.settings")
     django.setup()
@@ -351,14 +352,14 @@ if __name__ == "__main__":
 
     app = Apparatus.objects.filter(name = "mini-ARC v2.0").first()
 
-    conditionInstances = ConditionInstance.objects.all()
-    updateConditionInstanceFits(conditionInstances)
+    # conditionInstances = ConditionInstance.objects.exclude(valid=False)
+    # updateConditionInstanceFits(conditionInstances)
 
     conditionInstanceFits = ConditionInstanceFit.objects.all()
     updateSeriesStats(conditionInstanceFits)
 
-    conditions = Condition.objects.all()
-    updateConditionAvgs(app,conditions)
+    # conditions = Condition.objects.all()
+    # updateConditionAvgs(app,conditions)
     
     # for run in runs[0:]:
     #     series = run.diagnosticseries_set.all()

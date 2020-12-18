@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Avg, Min, Max
 from django.shortcuts import render
 from system.models import Condition, ConditionInstance
@@ -11,7 +12,7 @@ import numpy as np
 # Create your views here.
 
 def updateAllStats(apparatus):
-    conditionInstances = ConditionInstance.objects.all()
+    conditionInstances = ConditionInstance.objects.exclude(valid=False)
     updateConditionInstanceFits(conditionInstances)
 
     conditionInstanceFits = ConditionInstanceFit.objects.all()
@@ -20,12 +21,13 @@ def updateAllStats(apparatus):
     conditions = Condition.objects.all()
     updateConditionAvgs(apparatus,conditions)
 
+# @transaction.atomic
 def updateConditionInstanceFits(conditionInstances, plot=False):
     """Update statistics objects for all runs from given apparatus
     """
     ### Loop over all existing condition instances
-
     for ci in conditionInstances:
+        print(ci)
         ### Search through data & determine if current & flow diags are present
         series = ci.run.diagnosticseries_set.all()
         currentlist = series.filter(diagnostic__name="Arc Current [A]")
@@ -67,8 +69,10 @@ def updateConditionInstanceFits(conditionInstances, plot=False):
                                             stable_start=cond['stable_start'],stable_end=cond['stable_end'])
                     cif.save()
 
+# @transaction.atomic
 def updateSeriesStats(conditionInstanceFits):
     for cif in conditionInstanceFits:
+        print(cif)
         ### Loop over diagnostics & create series stat objects
         dg_series = cif.instance.run.diagnosticseries_set.all()
         for dgs in dg_series:
@@ -85,7 +89,8 @@ def updateSeriesStats(conditionInstanceFits):
             
             sss = SeriesStableStats.objects.filter(condition=cif, series=dgs)
             if sss.exists():
-                sss.update(series=dgs, condition=cif,avg=avg,stdev=stdev,min=vmin,max=vmax)
+                pass
+                # sss.update(series=dgs, condition=cif,avg=avg,stdev=stdev,min=vmin,max=vmax)
             else:
                 new_sss = SeriesStableStats(series=dgs, condition=cif,avg=avg,stdev=stdev,min=vmin,max=vmax)
                 new_sss.save()
@@ -99,12 +104,14 @@ def updateSeriesStats(conditionInstanceFits):
 
             sss = SeriesStartupStats.objects.filter(condition=cif, series=dgs)
             if sss.exists():
-                sss.update(series=dgs,condition=cif,dt=t1-t0,stdev=stdev,min=vmin,max=vmax)
+                pass
+                # sss.update(series=dgs,condition=cif,dt=t1-t0,stdev=stdev,min=vmin,max=vmax)
             else:
                 new_sss = SeriesStartupStats(series=dgs,condition=cif,dt=t1-t0,stdev=stdev,
                                             min=vmin,max=vmax)
                 new_sss.save()
 
+# @transaction.atomic
 def updateConditionAvgs(apparatus, conditions):
     ### select diagnostics from single apparatus
     dgs = Diagnostic.objects.filter(apparatus=apparatus)
@@ -112,6 +119,7 @@ def updateConditionAvgs(apparatus, conditions):
     ### loop over conditions & diagnostics
     for condition in conditions:
         for dg in dgs:
+            print(condition, dg)
             ### collect stats for given condition and diagnostic
             sss = SeriesStableStats.objects.filter(condition__instance__condition=condition, series__diagnostic = dg)
             if sss.exists():

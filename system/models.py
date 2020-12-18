@@ -224,6 +224,7 @@ class ConditionInstance(models.Model):
     condition = models.ForeignKey(Condition,on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     dwell_time = models.FloatField(default=60,verbose_name="dwell time (s)",null=True,blank=True)
+    valid = models.BooleanField(null=True,blank=True)
     
     #Sting arm section
     sweep_insertion = models.FloatField(verbose_name="Sweep arm dwell time (s)",null=True,blank=True)
