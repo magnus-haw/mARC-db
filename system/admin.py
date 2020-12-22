@@ -13,7 +13,7 @@ class StingDeviceAdmin(admin.ModelAdmin):
     search_fields = ('name','diagnostic','description')
 
 class ConditionAdmin(admin.ModelAdmin):
-    list_display = ('name','current','plasma_gas_flow','shield_gas_flow')
+    list_display = ('name','current','plasma_gas_flow','shield_gas_flow', 'nozzle', 'disks')
 
 class ConditionInstanceAdmin(admin.ModelAdmin):
     list_display = ('condition','run','name','dwell_time')

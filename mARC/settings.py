@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'data',
     'system',
     'stats',
+    'units',
+    'pdfs',
 ]
 
 MIDDLEWARE = [

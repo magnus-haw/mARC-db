@@ -355,7 +355,7 @@ if __name__ == "__main__":
     # conditionInstances = ConditionInstance.objects.exclude(valid=False)
     # updateConditionInstanceFits(conditionInstances)
 
-    conditionInstanceFits = ConditionInstanceFit.objects.all()
+    conditionInstanceFits = ConditionInstanceFit.objects.all()[29:]
     updateSeriesStats(conditionInstanceFits)
 
     # conditions = Condition.objects.all()
