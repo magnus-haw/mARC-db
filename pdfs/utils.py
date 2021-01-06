@@ -1,5 +1,3 @@
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph
 
@@ -337,21 +335,3 @@ def mARC_Run_sheet(mycanvas, run, linespace = 15):
 
     # Close the PDF object cleanly, and we're done.
     mycanvas.showPage()
-
-from django.conf import settings
-import mARC.settings as app_settings
-
-settings.configure(INSTALLED_APPS=app_settings.INSTALLED_APPS,DATABASES=app_settings.DATABASES)
-import django
-django.setup()
-from data.models import Run
-from system.models import ConditionInstance, Condition
-
-run = Run.objects.filter(name="Run_15").first()
-date = "05/13/2019"
-title = "Appendix A: mARC Run Sheet"
-
-mycanvas = canvas.Canvas('form.pdf', pagesize=letter)
-mARC_Run_sheet(mycanvas,run)
-print(run.date.time())
-mycanvas.save()

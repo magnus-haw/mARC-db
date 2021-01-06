@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('data/', include('data.urls')),
     path('system/', include('system.urls')),
+    path('pdf/', include('pdfs.urls')),
     path('', RedirectView.as_view(url='/data/', permanent=True)),
 ]
 

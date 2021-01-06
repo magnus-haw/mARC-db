@@ -29,14 +29,17 @@
 <div class="row">
   <div class="col-sm-12">
     <span class="align-middle"><h1>Run: {{ run.name }}</h1></span>
-    <span class="align-middle"><a href="{% url 'admin:data_run_change' run.pk %}">Edit</a></span>
-
-    <hr>
   </div>
-  
-  <div class="col-sm-1"> 
-      </div>
 </div>
+<div class="row">
+  <div class="col-sm-8">
+    <span class="align-middle"><a href="{% url 'runsheet-pdf' run.pk %}">Download Runsheet (PDF)</a></span>
+  </div>
+  <div class="col-sm-4 text-right">
+    <span class="align-middle"><a href="{% url 'admin:data_run_change' run.pk %}">Edit</a></span>
+  </div>
+</div>
+<hr>
 <div class="row">
   <div class="col-sm-3">
       <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' run.test.apparatus.pk %}">{{ run.test.apparatus.name }}</a></p>
