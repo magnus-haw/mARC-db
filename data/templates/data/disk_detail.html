@@ -1,7 +1,18 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>Disk: {{ disk.name }}</h1>
+  <div class="row">
+    <div class="col-sm-12">
+      <span class="align-middle"><h1>Disk: {{ disk.name }}</h1></span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-4"><span class="align-middle"><a href="{% url 'admin:system_disk_change' disk.pk %}">Edit</a></span></div>
+  </div>
+  <hr>
+  <p><strong>Operation time:</strong> {{ time |floatformat:"-3"}} [min]</p>
+  <p><strong>Total power usage:</strong> {{ energy |floatformat:"-3"}} [MJ]</p>
+  <p><strong>Total mass flow:</strong> {{ mass |floatformat:"-3" }} [kg]</p>
 
   <p><strong>Notes:</strong> {{ disk.notes }}</p>
   {% if disk.photo %}

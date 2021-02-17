@@ -165,17 +165,6 @@ class GasSettings(models.Model):
     class Meta:
         verbose_name_plural="gas settings"
       
-class FileAttachments(models.Model):
-    run = models.OneToOneField(Run,on_delete=models.CASCADE,primary_key=True)
-    run_sheet = models.FileField(null=True,blank=True)
-    pretest_photo = models.ImageField(null=True,blank=True)
-    posttest_photo= models.ImageField(null=True,blank=True)
-    video = models.FileField(null=True,blank=True)
-    spectra = models.FileField(null=True,blank=True)
-
-    class Meta:
-        verbose_name_plural="file attachments"
-
 class SettingAttachment(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)
     name = models.CharField(max_length=100)

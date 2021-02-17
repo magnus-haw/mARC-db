@@ -1,9 +1,17 @@
 {% extends "base_generic.html" %}
-
+{% load math_tags %}
 {% block title %}<title>{{ test.name }}</title>{% endblock %}
 
 {% block content %}
-  <h1>Test: {{ test.name }}</h1>
+  <div class="row">
+    <div class="col-sm-12">
+      <span class="align-middle"><h1>Test: {{ test.name }}</h1></span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-4"><span class="align-middle"><a href="{% url 'admin:data_test_change' test.pk %}">Edit</a></span></div>
+  </div>
+  <hr>
 
   <p><strong>Date:</strong> {{ test.date }}</p>
   <p><strong>Apparatus:</strong> <a href="{% url 'apparatus-detail' test.apparatus.pk %}">{{ test.apparatus.name }}</a></p>
@@ -12,12 +20,28 @@
 
 
   <div style="margin-left:20px;margin-top:20px">
-    <h4>Runs</h4>
-
+    <table style="width:100%">
+    <tr>
+        <th>Run</th>
+        <th>Date</th>
+        <th># Conditions</th>
+        <th>Run time [s]</th>
+        <th>Total energy [kJ]</th>
+        <th>Total mass flow [g]</th>
+        <th>Flags</th>
+    </tr>
     {% for run in test.run_set.all %}
-      <hr>
-      <p><strong><a href="{% url 'run-detail' run.pk %}">{{run.name}}</a></strong></p>
+        <tr>
+            <td><strong><a href="{% url 'run-detail' run.pk %}">{{run.name}}</a></strong></td>
+            <td>{{run.date}}</td>
+            <td>{{run.conditioninstance_set.count}}</td>
+            <td>{{run.runusage.time|floatformat:1 }}</td>
+            <td>{{run.runusage.energy|divide:1000|floatformat:2 }}</td>
+            <td>{{run.runusage.mass|floatformat:2 }}</td>
+            <td></td>
+        </tr>
     {% endfor %}
+    </table>
   </div>
 {% endblock %}
 

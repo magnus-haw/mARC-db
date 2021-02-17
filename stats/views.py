@@ -1,13 +1,16 @@
 from django.db import transaction
 from django.db.models import Avg, Min, Max
 from django.shortcuts import render
+
+from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
+from stats.models import RunUsage, DiagnosticConditionAverage
 from system.models import Condition, ConditionInstance
-from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats, DiagnosticConditionAverage
 from data.models import Run, Apparatus, Diagnostic
 
 from stats.utils import infer_conditions, collate_conditions, get_condition_match
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Create your views here.
 
@@ -15,11 +18,13 @@ def updateAllStats(apparatus):
     conditionInstances = ConditionInstance.objects.exclude(valid=False)
     updateConditionInstanceFits(conditionInstances)
 
-    conditionInstanceFits = ConditionInstanceFit.objects.all()
+    conditionInstanceFits = ConditionInstanceFit.objects.exclude(instance__valid=False)
     updateSeriesStats(conditionInstanceFits)
 
     conditions = Condition.objects.all()
     updateConditionAvgs(apparatus,conditions)
+
+    updateRunUsage(apparatus)
 
 # @transaction.atomic
 def updateConditionInstanceFits(conditionInstances, plot=False):
@@ -132,7 +137,7 @@ def updateConditionAvgs(apparatus, conditions):
                     s_max = sss.aggregate(Max('max'))
                     s_err = (s_max['max__max']-s_min['min__min'])/2.
                 else:
-                    s_err = np.std(sss.values_list('avg'))
+                    s_err = np.std(sss.values_list('avg', flat= True))
 
                 dg_cond_avg = DiagnosticConditionAverage.objects.filter(condition=condition, diagnostic=dg)
                 if dg_cond_avg.exists():
@@ -143,4 +148,78 @@ def updateConditionAvgs(apparatus, conditions):
                                                          err=s_err, npoints=n)
                     new_avg.save()
 
+def updateRunUsage(apparatus):
+    """Updates usage statistics for each run (time on, power used, total gasflow mass)
 
+    Args:
+        apparatus ([type]): specific apparatus
+    """
+    ### select diagnostics from single apparatus
+    runs = Run.objects.filter(test__apparatus =apparatus)
+
+    ### loop over conditions & diagnostics
+    for run in runs:
+        ru = RunUsage.objects.filter(run=run)
+        if ru.exists():
+            pass
+        else:
+            # Extract various setting diagnostics
+            series = run.diagnosticseries_set.all()
+            currentlist = series.filter(diagnostic__name="Arc Current [A]")
+            voltagelist = series.filter(diagnostic__name="Arc Voltage [V]")
+            flowlist = series.filter(diagnostic__name="Plasma gas [g/s]")
+
+            # search for existing condition instances
+            instances = ConditionInstance.objects.filter(run=run)
+            if len(instances) > 0:
+                # Find global start and endtime for all instances in run
+                times = []
+                for ci in instances:
+                    if hasattr(ci,'conditioninstancefit'):
+                        cif = ci.conditioninstancefit
+                        times.append(cif.end); times.append(cif.start)
+                if len(times)==0:
+                    # assume base settings for all quantities
+                    I = ci.condition.current
+                    f = ci.condition.plasma_gas_flow 
+                    times=[0,ci.dwell_time + 30]
+                    V = I*(-0.185) + 66.274*f + 89.03
+
+                    totaltime = max(times) - min(times)
+                    # calculate integral of power input
+                    totalenergy = V*I*totaltime
+                    # calculate integral of mass flow
+                    totalmass = f*totaltime
+                else:
+                    totaltime = max(times) - min(times)
+                    ti = np.linspace(min(times),max(times),1500)
+
+                    #Extract or predict current
+                    if len(currentlist)==0:
+                        I = np.ones(len(ti))*ci.condition.current
+                    else:
+                        current = currentlist[0]
+                        I = current.interp(ti)
+                    
+                    #Extract or predict mass flow
+                    if len(flowlist)==0:
+                        f = np.ones(len(ti))*ci.condition.plasma_gas_flow 
+                    else:
+                        flow = flowlist[0]
+                        f = flow.interp(ti)
+                    
+                    #Extract or predict voltage
+                    if len(voltagelist)==0:
+                        V = I*(-0.185) + 66.274*f + 89.03
+                    else:
+                        voltage = voltagelist[0]
+                        V = voltage.interp(ti)
+                    
+                    # calculate integral of power input
+                    totalenergy = np.trapz(V*I,x=ti)
+                    # calculate integral of mass flow
+                    totalmass = np.trapz(f,x=ti)
+
+                new_ru = RunUsage(run=run,time=totaltime,energy=totalenergy, mass = totalmass, notes="")
+                new_ru.save()
+                print(run.test, run, totaltime, totalenergy, totalmass)

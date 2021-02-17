@@ -1,6 +1,7 @@
 from data.models import Diagnostic,Test,Run,Apparatus,DiagnosticSeries, TimeSeries
 from data.forms import SearchForm,UploadTestForm,UploadRunForm
 from system.models import Cathode, Disk, Nozzle, Condition
+from stats.models import RunUsage
 
 from django.shortcuts import render,render_to_response,get_object_or_404
 from django.http import HttpResponse,HttpResponseRedirect
@@ -8,6 +9,7 @@ from django.views import generic
 from django.contrib import messages
 from django.urls import reverse
 from django.db import transaction
+from django.db.models import Sum
 
 from bokeh.plotting import figure
 from bokeh.embed import components
@@ -50,26 +52,48 @@ def ApparatusDetailView(request,apparatus_pk):
 
 def CathodeView(request,cathode_pk):
     cathode = get_object_or_404(Cathode, pk=cathode_pk)
+    ru = RunUsage.objects.filter(run__cathode= cathode)
+    totaltime = ru.aggregate(Sum('time'))['time__sum']/60.
+    totalenergy = ru.aggregate(Sum('energy'))['energy__sum']/1.e6
+    totalmass = ru.aggregate(Sum('mass'))['mass__sum']/1000.
     
     context = {
             'cathode':cathode,
+            'time':totaltime,
+            'energy':totalenergy,
+            'mass':totalmass,
             }
     return render(request, 'data/cathode_detail.html', context = context)
 
 def NozzleView(request,nozzle_pk):
     nozzle = get_object_or_404(Nozzle, pk=nozzle_pk)
+    ru = RunUsage.objects.filter(run__nozzle= nozzle)
+    totaltime = ru.aggregate(Sum('time'))['time__sum']/60.
+    totalenergy = ru.aggregate(Sum('energy'))['energy__sum']/1.e6
+    totalmass = ru.aggregate(Sum('mass'))['mass__sum']/1000.
     
     context = {
             'nozzle':nozzle,
+            'time':totaltime,
+            'energy':totalenergy,
+            'mass':totalmass,
             }
     return render(request, 'data/nozzle_detail.html', context = context)
 
 def DiskView(request,disk_pk):
     disk = get_object_or_404(Disk, pk=disk_pk)
+    ru = RunUsage.objects.filter(run__disks__in = [disk]).distinct()
+    totaltime = ru.aggregate(Sum('time'))['time__sum']/60.
+    totalenergy = ru.aggregate(Sum('energy'))['energy__sum']/1.e6
+    totalmass = ru.aggregate(Sum('mass'))['mass__sum']/1000.
     
     context = {
             'disk':disk,
+            'time':totaltime,
+            'energy':totalenergy,
+            'mass':totalmass,
             }
+
     return render(request, 'data/disk_detail.html', context = context)
 
 def TestView(request,test_pk):

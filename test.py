@@ -5,11 +5,9 @@ settings.configure(INSTALLED_APPS=app_settings.INSTALLED_APPS,DATABASES=app_sett
 import django
 django.setup()
 from data.models import *
-
+from stats.models import *
+from stats.views import *
 import numpy as np
 
-dgs = DiagnosticSeries.objects.all()
-for dg in dgs:
-    r = dg.run
-    if len(dg.time.time) != len(dg.values):
-        print(r.name, dg.name)
+app = Apparatus.objects.all().last()
+updateRunUsage(app)

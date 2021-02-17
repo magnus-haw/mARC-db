@@ -4,6 +4,7 @@ from system.models import ConditionInstance, Condition
 from sklearn import linear_model
 
 # Create your models here.
+
 class ConditionInstanceFit(models.Model):
     instance = models.OneToOneField(ConditionInstance, on_delete=models.CASCADE)
     start = models.FloatField(null=True,blank=True)
@@ -14,6 +15,16 @@ class ConditionInstanceFit(models.Model):
 
     def __str__(self):
         return self.instance.name + "_" + str(self.start) + "_" + str(self.end)
+
+class RunUsage(models.Model):
+    run = models.OneToOneField(Run, on_delete=models.CASCADE)
+    time = models.FloatField(null=True,blank=True)
+    energy = models.FloatField(null=True,blank=True)
+    mass = models.FloatField(null=True,blank=True)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.run.name + "_use_stats"
 
 class DiagnosticConditionAverage(models.Model):
     condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
@@ -36,7 +47,7 @@ class SeriesStableStats(models.Model):
     notes = models.TextField(null=True)
 
     def __str__(self):
-        return self.series.diagnostic.name + "_" + self.condition.instance.run.name
+        return self.series.diagnostic.name + "_" + self.condition.instance.run.name + "_" + self.condition.instance.run.test.name
 
 class SeriesStartupStats(models.Model):
     series = models.ForeignKey(DiagnosticSeries, on_delete=models.CASCADE)
@@ -49,7 +60,8 @@ class SeriesStartupStats(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.condition.condition + "_" + self.dt
+        return self.series.diagnostic.name + "_" + self.condition.instance.run.name + "_" + self.condition.instance.run.test.name
+
 
 class MyListField(models.TextField):
     description = "A string list serialized to txt"
@@ -84,7 +96,7 @@ class LinearModel(models.Model):
     notes = models.TextField(null=True)
 
     def __str__(self):
-        return self.name + "_" + str(self.updated_at)
+        return self.name + "_" + str(self.updated)
 
     def getModelObject(self):
         reg = linear_model.LinearRegression()

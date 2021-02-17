@@ -53,19 +53,6 @@ class Run(models.Model):
     disks = models.ManyToManyField('system.Disk', blank=True)
     diagnostics = models.ManyToManyField('Diagnostic')
     notes = models.TextField(null=True,blank=True)
-
-    FAILED = 'FAILED'
-    OFFNOMINAL = 'OFF-NOMINAL'
-    SUCCESS = 'SUCCESS'
-    PRERUN = 'PRERUN'
-    CONDITIONFLAGS = [
-        (FAILED, 'Failed'),
-        (OFFNOMINAL, 'Off-nominal'),
-        (SUCCESS, 'Success'),
-        (PRERUN, 'Pre-run'),
-    ]
-    flag = models.CharField(max_length=12,choices=CONDITIONFLAGS,null=True,blank=True)
-
     
     class Meta:
         unique_together = (("name", "test"),)
@@ -197,6 +184,12 @@ class DiagnosticSeries(models.Model):
 
     def __str__(self):
         return self.name
+
+    def interp(self, tnew):
+        ###!!! interpolate values uniformly without nans.
+        t0,vals = self.time.time, self.values
+        nans = np.isnan(vals)
+        return np.interp(tnew, t0[~nans], vals[~nans])
 
 class DiagnosticFile(models.Model):
     run = models.ForeignKey(Run,on_delete=models.CASCADE)

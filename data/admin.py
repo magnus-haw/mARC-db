@@ -3,7 +3,7 @@ from .models import Test, Diagnostic, Run, Apparatus
 from .models import Unit, AlternateUnitName, AlternateDiagnosticName
 from .models import Person
 
-from system.models import ConditionInstance, FileAttachments
+from system.models import ConditionInstance
 from system.models import GasSettings, DistilledWaterLoop
 from system.models import SensorWaterLoop, VacuumWaterLoop, VacuumSystem
 from system.models import CameraSettings, SettingAttachment
@@ -18,9 +18,6 @@ class TestAdmin(admin.ModelAdmin):
 
 class VacuumSystemInline(admin.TabularInline):
     model = VacuumSystem
-
-# class FileAttachmentsInline(admin.TabularInline):
-#     model = FileAttachments
 
 class SettingAttachmentsInline(admin.TabularInline):
     model = SettingAttachment
@@ -57,7 +54,6 @@ class RunAdmin(admin.ModelAdmin):
         ConditionInline,
         GasSettingsInline,
         CameraInline,
-        # FileAttachmentsInline,
         SettingAttachmentsInline,
         DistilledWaterLoopInline,
         VacuumWaterLoopInline,
