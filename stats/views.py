@@ -3,7 +3,7 @@ from django.db.models import Avg, Min, Max
 from django.shortcuts import render
 
 from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
-from stats.models import RunUsage, DiagnosticConditionAverage
+from stats.models import RunUsage, DiagnosticConditionAverage, Flag
 from system.models import Condition, ConditionInstance
 from data.models import Run, Apparatus, Diagnostic
 
@@ -28,13 +28,14 @@ def updateAllStats(apparatus):
 
 # @transaction.atomic
 def updateConditionInstanceFits(conditionInstances, plot=False):
-    """Update statistics objects for all runs from given apparatus
+    """Update time-series fits for list of condition instances
     """
     ### Loop over all existing condition instances
     for ci in conditionInstances:
         print(ci)
         ### Search through data & determine if current & flow diags are present
         series = ci.run.diagnosticseries_set.all()
+        dg_inputs = Diagnostic.objects.filter(apparatus=ci.run.test.apparatus, category='INPUT')
         currentlist = series.filter(diagnostic__name="Arc Current [A]")
         flowlist = series.filter(diagnostic__name="Plasma gas [g/s]")
 
@@ -73,6 +74,24 @@ def updateConditionInstanceFits(conditionInstances, plot=False):
                         cif = ConditionInstanceFit(instance= ci, start= cond['start'], end= cond['end'],
                                             stable_start=cond['stable_start'],stable_end=cond['stable_end'])
                     cif.save()
+
+def updateFlags(conditionInstances):
+    """Update flags for condition instances
+    """
+    dg_inputs = Diagnostic.objects.filter(apparatus=ci.run.test.apparatus, category='INPUT')
+    dg_flag_missing = Diagnostic.objects.filter(apparatus=ci.run.test.apparatus, flag_if_missing=True)
+    ### Loop over all existing condition instances
+    for ci in conditionInstances:
+        ### Search through data & determine if all input diagnostics are present
+        series = ci.run.diagnosticseries_set.all()
+        run = ci.run
+        for dg_in in dg_inputs:
+            if not series.filter(id=dg_in.id).exists():
+                Flag.objects.get_or_create(run=run, rating=1, description=dg_in.name+" missing")
+        for dg_in in dg_flag_missing:
+            if not series.filter(id=dg_in.id).exists():
+                Flag.objects.get_or_create(run=run, rating=0, description=dg_in.name+" missing")
+        
 
 # @transaction.atomic
 def updateSeriesStats(conditionInstanceFits):

@@ -103,3 +103,20 @@ class LinearModel(models.Model):
         reg.coef_ = self.coeff
         reg.intercept_ = self.intercept
         return reg
+
+
+class Flag(models.Model):
+    run = models.ForeignKey(Run, on_delete=models.CASCADE)
+    FLAGTYPES = [
+        (0, 'Missing diagnostic'),
+        (1, 'Missing input diagnostic'),
+        (2, 'Run aborted'),
+        (3, 'Arc unstable'),
+        (4, 'Water leak'),
+        (5, 'Insufficient vacuum'),
+    ]
+    rating = models.PositiveIntegerField(default=0, choices=FLAGTYPES)
+    description = models.CharField(max_length=150, null=True, blank=True)
+    
+    def __str__(self):
+        return self.rating + "_" + self.description  

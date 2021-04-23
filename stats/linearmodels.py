@@ -3,9 +3,9 @@ from sklearn import linear_model
 from sklearn import svm
 import numpy as np
 
-from .models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
-from system.models import Condition, ConditionInstance
-from data.models import Run, Apparatus, Diagnostic
+#from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
+#from system.models import Condition, ConditionInstance
+#from data.models import Run, Apparatus, Diagnostic
 
 def fit_linear_model(dg,model_type="Lasso", alpha=0.01):
     # Query for all runs with input params & with particular diagnostic stat
@@ -61,7 +61,9 @@ if __name__ == "__main__":
     runs = Run.objects.filter(test__apparatus = app)
     current = Diagnostic.objects.filter(name="Arc Current [A]").first()
     mfr = Diagnostic.objects.filter(name="Plasma gas [g/s]").first()
-    dg = Diagnostic.objects.filter(name="Arc Voltage [V]").first() #Arc Voltage [V], Column Pressure [Pa]
+    volts = Diagnostic.objects.filter(name="Arc Voltage [V]").first()
+    colpres = Diagnostic.objects.filter(name="Column Pressure [Pa]").first()
+    dg = colpres
 
     # Query for all runs with input params & with particular diagnostic stat
     runs = runs.filter(diagnostics__in=[dg]).distinct()
@@ -69,18 +71,21 @@ if __name__ == "__main__":
     # Parse and shape data (each row is a sample point)
     samples,output = [],[]
     for run in runs:
-        print(run.name)
+        #print(run.name)
         headers = ["Arc Current (A)", "Plasma gas (g/s)", "arc_length (m)", "nozzle_diameter (m)"]
         arc_length = run.disks.count()*.01 #m
         nozzle_diameter = run.nozzle.diameter/100.
         for ci in run.conditioninstance_set.all():
             if hasattr(ci,'conditioninstancefit'):
-                cif = ci.conditioninstancefit
-                I_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=current).avg
-                F_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=mfr).avg
-                dg_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=dg).avg
-                samples.append([I_avg, F_avg])#, arc_length, nozzle_diameter])
-                output.append(dg_avg)
+                try:
+                    cif = ci.conditioninstancefit
+                    I_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=current).avg
+                    F_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=mfr).avg
+                    dg_avg = SeriesStableStats.objects.get(condition=cif, series__diagnostic=dg).avg
+                    samples.append([I_avg, F_avg])#, arc_length, nozzle_diameter])
+                    output.append(dg_avg)
+                except:
+                    print("Insufficient data for: ",ci.run.name, ci.run.test.name)
     samples = np.array(samples)
     output = np.array(output)
     x,y = samples[:,0], samples[:,1]
@@ -126,7 +131,7 @@ if __name__ == "__main__":
 
     lm= LinearModel(name=dg.name, diagnostic=dg, coeff=reg.coef_, intercept=reg.intercept_, 
                     headers= ["Arc Current (A)", "Plasma gas (g/s)"], fit_method="Lasso", notes="first")
-    lm.save()
+    #lm.save()
 
     plt.show()
     # reg = svm.SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,coef0=1)

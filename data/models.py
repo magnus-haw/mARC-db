@@ -56,7 +56,7 @@ class Run(models.Model):
     
     class Meta:
         unique_together = (("name", "test"),)
-        ordering = ['name']
+        ordering = ['-date']
     
     def __str__(self):
         return self.name
@@ -116,6 +116,18 @@ class Diagnostic(models.Model):
     sensor= models.CharField(max_length=200)
     description = models.TextField()
     datasheet = models.FileField(null=True, blank=True)
+    flag_if_missing = models.BooleanField(null=True, blank=True, default=False)
+    TYPES = [
+        ('INPUT', 'Exp Input'),
+        ('OUTPUT', 'Exp Output'),
+        ('ENVIRN', 'Environmental'),
+        ('OTHER', 'Other'),
+    ]
+    category = models.CharField(
+        max_length=6,
+        choices=TYPES,
+        default='OUTPUT',
+    )
     
     def __str__(self):
         return self.name

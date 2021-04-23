@@ -10,16 +10,40 @@
     <div class="col-sm-4"><span class="align-middle"><a href="{% url 'admin:system_cathode_change' cathode.pk %}">Edit</a></span></div>
   </div>
   <hr>
-  <p><strong>Description:</strong> {{ cathode.description }}</p>
-  <p><strong>Type:</strong> {{ cathode.type }}</p>
-  <p><strong>Install date:</strong> {{ cathode.installed }}</p>
-  <p><strong>Removal date:</strong> {{ cathode.removed }}</p>
 
-  <p><strong>Operation time:</strong> {{ time |floatformat:"-3"}} [min]</p>
-  <p><strong>Total power usage:</strong> {{ energy |floatformat:"-3"}} [MJ]</p>
-  <p><strong>Total mass flow:</strong> {{ mass |floatformat:"-3" }} [kg]</p>
+  <div class="row">
+    <div class="col-lg-12">
+      <p><strong>Description:</strong> {{ cathode.description }}</p>
+      <p><strong>Type:</strong> {{ cathode.type }}</p>
+      <p><strong>Install date:</strong> {{ cathode.installed }}</p>
+      <p><strong>Removal date:</strong> {{ cathode.removed }}</p>
 
-  <p><strong>Notes:</strong> {{ cathode.notes }}</p>
-  <div style="margin-left:20px;margin-top:20px">
-  </div>
+      <p><strong>Operation time:</strong> {{ time |floatformat:"-3"}} [min]</p>
+      <p><strong>Total power usage:</strong> {{ energy |floatformat:"-3"}} [MJ]</p>
+      <p><strong>Total mass flow:</strong> {{ mass |floatformat:"-3" }} [kg]</p>
+      <p><strong># Cathode starts:</strong> {{ cathode.run_set.count }}</p>
+
+      <p><strong>Notes:</strong> {{ cathode.notes }}</p>
+      <div style="margin-left:20px;margin-top:20px">
+      </div>
+
+      <br>
+      <h3>Associated Runs:</h3>
+      <table style="width:100%">
+      <tr>
+          <th>Run</th>
+          <th>Test</th>
+          <th>Date</th>
+      </tr>
+      {% for run in cathode.run_set.all %}
+          <tr>
+              <td><a href="{% url 'run-detail' run.pk %}">{{run.name}}</a></td>
+              <td><a href="{% url 'test' run.test.pk %}">{{run.test.name}}</a></td>
+              <td>{{run.date}}</td>
+          </tr>
+      {% endfor %}
+      </table>
+      <hr>
+    </div> <!-- end col -->
+  </div> <!-- end row -->
 {% endblock %}

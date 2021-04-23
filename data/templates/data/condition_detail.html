@@ -42,6 +42,7 @@
     <tr>
         <th>Test</th>
         <th>Run</th>
+        <th>Date</th>
         <th>Dwell Time (s)</th>
         <th>L1 arm</th>
         <th>L2 arm</th>
@@ -51,6 +52,7 @@
         <tr>
             <td><a href="{% url 'test' cond.run.test.pk %}">{{cond.run.test.name}}</a></td>
             <td><a href="{% url 'run-detail' cond.run.pk %}">{{cond.run.name}}</a></td>
+            <td>{{cond.run.date}}</td>
             <td>{{cond.dwell_time}}</td>
             <td>{% for dev in cond.l1_devices.all%}dev.name,{% endfor %} {{cond.l1_insertion}} {% if cond.l1_insertion %}[s]{%endif%}</td>
             <td>{% for dev in cond.l2_devices.all%}dev.name,{% endfor %} {{cond.l2_insertion}} {% if cond.l2_insertion %}[s]{%endif%}</td>

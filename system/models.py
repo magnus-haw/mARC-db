@@ -5,8 +5,10 @@ from data.models import Run, Diagnostic, Person
 class Gas(models.Model):
     name = models.CharField(max_length=200,unique=True)
     abbrv = models.CharField(max_length=6,null=True,blank=True,unique=True)
+    molecular_weight = models.FloatField(blank=True, null=True)
+    ionization_energy = models.FloatField(blank=True, null=True)
     notes = models.TextField(null=True)
-    
+
     def __str__(self):
         return self.name
     
@@ -89,8 +91,8 @@ class Cathode(models.Model):
     installed = models.DateField(blank=True,null=True)
     removed = models.DateField(blank=True,null=True)
     description = models.TextField(blank=True,null=True)
-    pretest_photo = models.ImageField(blank=True,null=True)
-    posttest_photo= models.ImageField(blank=True,null=True)
+    preinstall_photo = models.ImageField(blank=True,null=True)
+    postremoval_photo= models.ImageField(blank=True,null=True)
 
     def __str__(self):
         return self.name
@@ -204,6 +206,12 @@ class Condition(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_num_repr(self):
+        listvalues = [self.current/100, self.plasma_gas_flow, self.shield_gas_flow, self.nozzle.diameter, 
+                      self.disks, self.shield_gas.molecular_weight, self.plasma_gas.molecular_weight]
+        
+        return listvalues
     
     class Meta:
         ordering = ['name']
@@ -228,3 +236,5 @@ class ConditionInstance(models.Model):
     def __str__(self):
         return self.run.name+ "_" +self.name
 
+    class Meta:
+        ordering = ['run__date']
