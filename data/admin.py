@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Test, Diagnostic, Run, Apparatus
-from .models import Unit, AlternateUnitName, AlternateDiagnosticName
+from .models import AlternateDiagnosticName, DiagnosticFile
 from .models import Person
 
 from system.models import ConditionInstance
@@ -65,27 +65,15 @@ class PersonAdmin(admin.ModelAdmin):
     list_display = ('name', 'notes')
     search_fields = ('name', 'notes')
 
-
 class ApparatusAdmin(admin.ModelAdmin):
     list_display = ('name', 'acronym', 'notes')
     search_fields = ('name', 'acronym', 'notes')
 
-
 class AlternateDiagnosticNameInline(admin.TabularInline):
     model = AlternateDiagnosticName
 
-
-class AlternateUnitNameInline(admin.TabularInline):
-    model = AlternateUnitName
-
-
-class UnitAdmin(admin.ModelAdmin):
-    list_display = ('name', 'short_name')
-    search_fields = ('name', 'short_name')
-    inlines = [
-        AlternateUnitNameInline,
-    ]
-
+class DiagnosticFileInline(admin.TabularInline):
+    model = DiagnosticFile
 
 class DiagnosticAdmin(admin.ModelAdmin):
     list_display = ('name', 'apparatus', 'units', 'sensor', 'notes')
@@ -94,7 +82,6 @@ class DiagnosticAdmin(admin.ModelAdmin):
         AlternateDiagnosticNameInline,
     ]
 
-admin.site.register(Unit, UnitAdmin)
 admin.site.register(Apparatus, ApparatusAdmin)
 admin.site.register(Test, TestAdmin)
 admin.site.register(Run, RunAdmin)

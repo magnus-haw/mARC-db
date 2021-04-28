@@ -1,6 +1,8 @@
 from django.db import models
 import pandas as pd
 import numpy as np
+
+from units.models import ComboUnit
 # Create your models here.
 
 class Person(models.Model):
@@ -98,35 +100,44 @@ class Run(models.Model):
         diagnostics = Diagnostic.objects.filter(name__in=dg_list,apparatus=self.test.apparatus)
         return diagnostics
 
-class Unit(models.Model):
-    name = models.CharField(max_length=50,unique=True)
-    short_name = models.CharField(max_length=5,unique=True)
-    def __str__(self):
-        return self.name
-
-class AlternateUnitName(models.Model):
-    name = models.CharField(max_length=50,unique=True)
-    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
-
 class Diagnostic(models.Model):
     name = models.CharField(max_length=50)
-    units = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    units = models.ForeignKey(ComboUnit, on_delete=models.CASCADE)
     apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
     notes = models.TextField(blank=True,null=True)
     sensor= models.CharField(max_length=200)
     description = models.TextField()
+    image = models.ImageField(null=True, blank=True)
     datasheet = models.FileField(null=True, blank=True)
     flag_if_missing = models.BooleanField(null=True, blank=True, default=False)
+    is_input_setting = models.BooleanField(default=False)
+
+    DATATYPES = [
+        ('IMAGE', 'Image'),
+        ('VIDEO', 'Video'),
+        ('XT','Time series'),
+        ('XYT', 'N-dim time series'),
+        ('LIDAR', 'Point cloud'),
+        ('OTHER', 'Other'),
+    ]
+
     TYPES = [
-        ('INPUT', 'Exp Input'),
-        ('OUTPUT', 'Exp Output'),
+        ('SYSTEM', 'System'),
         ('ENVIRN', 'Environmental'),
+        ('CAMERA', 'Camera'),
+        ('INSERT', 'Insertion'),
         ('OTHER', 'Other'),
     ]
     category = models.CharField(
         max_length=6,
         choices=TYPES,
-        default='OUTPUT',
+        default='SYSTEM',
+    )
+
+    datatype = models.CharField(
+        max_length=6,
+        choices=DATATYPES,
+        default='XT',
     )
     
     def __str__(self):
@@ -163,8 +174,9 @@ class TimeSeries(models.Model):
 class DiagnosticCalibration(models.Model):
     diagnostic = models.ForeignKey(Diagnostic, on_delete=models.CASCADE)
     vinput = MyArrayField()
-    inputUnits = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    inputUnits = models.ForeignKey(ComboUnit, on_delete=models.CASCADE, related_name="inputUnits")
     output = MyArrayField()
+    outputUnits = models.ForeignKey(ComboUnit, on_delete=models.CASCADE, related_name="outputUnits")
     resolution = models.FloatField(blank=True,null=True)
     temporalresolution = models.FloatField(blank=True,null=True)
     
@@ -182,6 +194,7 @@ class DiagnosticSetup(models.Model):
     date = models.DateTimeField(null=True)
     expiration = models.DateField(null=True, blank=True)
     description = models.TextField()
+    components = models.ManyToManyField("system.component", blank=True)
     image = models.ImageField(null=True)
 
     def __str__(self):

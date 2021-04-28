@@ -1,5 +1,6 @@
 from django.db import models
-from data.models import Run, Diagnostic, Person
+from data.models import Run, Diagnostic, Person, Apparatus
+from units.models import ComboUnit
 
 # Create your models here.
 class Gas(models.Model):
@@ -15,6 +16,35 @@ class Gas(models.Model):
     class Meta:
         ordering = ['name']
         verbose_name_plural = "gases"
+
+class Material(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+    abbrv = models.CharField(max_length=6,null=True,blank=True,unique=True)
+    description = models.TextField(blank=True, null=True)
+    molecular_weight = models.FloatField(blank=True, null=True)
+    ionization_energy = models.FloatField(blank=True, null=True)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+class TestSample(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+    material = models.ForeignKey(Material, on_delete=models.SET_NULL, null=True)
+    shape = models.CharField(max_length=50)
+    diameter = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
+    diagnostics = models.ManyToManyField(Diagnostic)
+    notes = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 class StingDevice(models.Model):
     name = models.CharField(max_length=200)
@@ -238,3 +268,75 @@ class ConditionInstance(models.Model):
 
     class Meta:
         ordering = ['run__date']
+
+class Component(models.Model):
+    name = models.CharField(max_length=200)
+    critical = models.BooleanField(default=False)
+    type = models.CharField(max_length=100)
+    subsystem = models.ForeignKey('Subsystem', on_delete=models.CASCADE, null=True, blank=True)
+    description = models.TextField(blank=True,null=True)
+    installed = models.DateTimeField(blank=True,null=True)
+    removed = models.DateTimeField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class ComponentFile(models.Model):
+    component = models.ForeignKey(Component,on_delete=models.CASCADE)
+    file = models.FileField()
+    
+    DOCUMENT = 'DOC'
+    IMAGE = 'IMG'
+    VIDEO = 'VID'
+    OTHER = 'OTR'
+    FILETYPES = [
+        (DOCUMENT, 'Document'),
+        (IMAGE, 'Image'),
+        (VIDEO, 'Video'),
+        (OTHER, 'Other'),
+    ]
+    type = models.CharField(
+        max_length=3,
+        choices=FILETYPES,
+        default=DOCUMENT,
+    )
+    description = models.TextField(blank=True,null=True)
+
+class Subsystem(models.Model):
+    apparatus = models.ForeignKey(Apparatus, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    type = models.CharField(max_length=25)
+    description = models.TextField(blank=True,null=True)
+
+    def __str__(self):
+        return self.name
+
+class SubsystemConfig(models.Model):
+    name = models.CharField(max_length=200)
+    subsystem = models.ForeignKey('Subsystem', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    description = models.TextField(blank=True,null=True)
+    date = models.DateTimeField()
+
+    def __str__(self):
+        return self.subsystem.name + str(self.date)
+
+class SubsystemConfigItem(models.Model):
+    config = models.ForeignKey('SubsystemConfig', on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    value1_name = models.FloatField(null=True, blank=True)
+    value1 = models.FloatField(null=True, blank=True)
+    value1_unit = models.ForeignKey(ComboUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name="val1unit")
+    value2_name = models.FloatField(null=True, blank=True)
+    value2 = models.FloatField(null=True, blank=True)
+    value2_unit = models.ForeignKey(ComboUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name="val2unit")
+    
+    description = models.TextField(blank=True,null=True)
+    component = models.ForeignKey('Component', on_delete=models.SET_NULL, null=True, blank=True)
+    diagnostic = models.ForeignKey(Diagnostic, on_delete=models.SET_NULL, null=True, blank=True)
+    image = models.ImageField(null=True, blank=True)
+    file = models.FileField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name

@@ -1,7 +1,9 @@
 from django.contrib import admin
 from .models import StingDevice,Gas,Condition,Nozzle,Cathode
 from .models import Camera,Lens,OpticalFilter,CameraPosition
-from .models import Disk, ConditionInstance
+from .models import Disk, ConditionInstance, Component, Subsystem
+from .models import SubsystemConfig, SubsystemConfigItem
+from .models import ComponentFile
 
 # Register your models here.
 class GasAdmin(admin.ModelAdmin):
@@ -18,18 +20,6 @@ class ConditionAdmin(admin.ModelAdmin):
 class ConditionInstanceAdmin(admin.ModelAdmin):
     list_display = ('condition','run','name','dwell_time')
 
-class CameraAdmin(admin.ModelAdmin):
-    list_display = ('name','notes')
-
-class LensAdmin(admin.ModelAdmin):
-    list_display = ('name','notes')
-
-class OpticalFilterAdmin(admin.ModelAdmin):
-    list_display = ('name','notes')
-
-class CameraPositionAdmin(admin.ModelAdmin):
-    list_display = ('name','notes')
-
 class CathodeAdmin(admin.ModelAdmin):
     list_display = ('name','type', 'installed', 'removed')
 
@@ -39,18 +29,33 @@ class DiskAdmin(admin.ModelAdmin):
 class NozzleAdmin(admin.ModelAdmin):
     list_display = ('name','diameter','notes')
 
-class PreRunSettingsAdmin(admin.ModelAdmin):
-    list_display = ('name','nozzle','cathode','disks')
+class ComponentFileInline(admin.StackedInline):
+    model = ComponentFile
 
+class SubsystemConfigItemInline(admin.StackedInline):
+    model = SubsystemConfigItem
+
+class ComponentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'type','description','installed')
+    list_filter = ('type', 'installed',)
+    inlines = [ComponentFileInline,]
+
+class SubsystemAdmin(admin.ModelAdmin):
+    list_display = ('name','apparatus','type','description')
+    list_filter = ('apparatus','type',)
+
+class SubsystemConfigAdmin(admin.ModelAdmin):
+    list_display = ('name', 'subsystem', 'description', 'last_modified')
+    list_filter = ('subsystem',)
+    inlines = [SubsystemConfigItemInline,]
+
+admin.site.register(SubsystemConfig, SubsystemConfigAdmin)
+admin.site.register(Subsystem, SubsystemAdmin)
+admin.site.register(Component, ComponentAdmin)
 admin.site.register(Condition,ConditionAdmin)
 admin.site.register(ConditionInstance,ConditionInstanceAdmin)
 admin.site.register(Gas,GasAdmin)
 admin.site.register(StingDevice,StingDeviceAdmin)
-
-admin.site.register(Camera,CameraAdmin)
-admin.site.register(Lens,LensAdmin)
-admin.site.register(OpticalFilter,OpticalFilterAdmin)
-admin.site.register(CameraPosition,CameraPositionAdmin)
 
 admin.site.register(Cathode,CathodeAdmin)
 admin.site.register(Disk,DiskAdmin)

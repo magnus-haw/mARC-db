@@ -3,9 +3,9 @@ from sklearn import linear_model
 from sklearn import svm
 import numpy as np
 
-#from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
-#from system.models import Condition, ConditionInstance
-#from data.models import Run, Apparatus, Diagnostic
+from stats.models import ConditionInstanceFit, SeriesStableStats, SeriesStartupStats
+from system.models import Condition, ConditionInstance
+from data.models import Run, Apparatus, Diagnostic
 
 def fit_linear_model(dg,model_type="Lasso", alpha=0.01):
     # Query for all runs with input params & with particular diagnostic stat

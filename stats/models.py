@@ -110,11 +110,11 @@ class Flag(models.Model):
     FLAGTYPES = [
         (0, 'Missing diagnostic'),
         (1, 'Missing input diagnostic'),
-        (2, 'Run aborted'),
-        (3, 'Arc unstable'),
-        (4, 'Water leak'),
-        (5, 'Insufficient vacuum'),
+        (2, 'Arc unstable'),
+        (3, 'Water leak'),
+        (4, 'Insufficient vacuum'),
     ]
+    aborted = models.BooleanField(default=False)
     rating = models.PositiveIntegerField(default=0, choices=FLAGTYPES)
     description = models.CharField(max_length=150, null=True, blank=True)
     
